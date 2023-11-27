@@ -13,8 +13,8 @@ namespace G__Interpreter
     {
         public Interpreter()
         {
-            // Initialize the Memory class
-            Memory.Initialize();
+            // Initialize the StandardLibrary class
+            StandardLibrary.Initialize();
         }
 
         /// <summary>
@@ -31,20 +31,16 @@ namespace G__Interpreter
 
                 // Parsing: Build an abstract syntax tree (AST) from the Tokens
                 Parser parser = new Parser(tokens);
-                Expression AST = parser.Parse();
+                List<Expression> AST = parser.Parse();
 
                 // Evaluating: Evaluate the expressions in the AST and produce a result
                 Evaluator evaluator = new Evaluator();
-                object result = evaluator.Evaluate(AST);
-
-                Console.WriteLine(result);
+                evaluator.Evaluate(AST);
             }
             catch (Error error)
             {
                 // Print the error message
-                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(error.Report());
-                Console.ForegroundColor = ConsoleColor.Green;
                 return;
             }
         }

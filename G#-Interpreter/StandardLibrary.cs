@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 namespace G__Interpreter
 {
     /// <summary>
-    /// Represents a memory that stores the declared functions.
+    /// Represents the standar library of the G# language.
     /// </summary>
-    public static class Memory
+    public static class StandardLibrary
     {
-        public static Dictionary<string, FunctionDeclaration> DeclaredFunctions { get; private set; } // The dictionary of declared functions
+        public static readonly List<string> Keywords = new() {"let", "in", "if", "then", "else", "true", "false", "PI", "E"};   // List of keywords and constants of G#
+        public static Dictionary<string, FunctionDeclaration> DeclaredFunctions { get; private set; }                           // The dictionary of declared functions
 
         /// <summary>
         /// Initializes a dictionary of declared functions and adds the predefined functions to it.
@@ -26,7 +27,6 @@ namespace G__Interpreter
             DeclaredFunctions["log"] = null;
             DeclaredFunctions["exp"] = null;
         }
-
         /// <summary>
         /// Adds a function declaration to the dictionary of declared functions.
         /// </summary>

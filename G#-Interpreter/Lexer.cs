@@ -14,7 +14,6 @@ namespace G__Interpreter
         private List<Token> Tokens;                     // The list of Tokens
         private int StartofLexeme;                      // The start of the current lexeme
         private int CurrentPosition;                    // The current position in the source code
-        private Dictionary<string, TokenType> Keywords; // Dictionary of keywords and constants
 
         public Lexer(string source)
         {
@@ -22,16 +21,6 @@ namespace G__Interpreter
             Tokens = new List<Token>();
             StartofLexeme = 0;
             CurrentPosition = 0;
-            Keywords = new Dictionary<string, TokenType>{
-                {"let", TokenType.LET},
-                {"in", TokenType.IN},
-                {"function", TokenType.FUNCTION},
-                {"if", TokenType.IF},
-                {"else", TokenType.ELSE},
-                {"true", TokenType.BOOLEAN},
-                {"false", TokenType.BOOLEAN},
-                {"PI", TokenType.NUMBER},
-                {"E", TokenType.NUMBER} };
         }
 
         /// <summary>
@@ -65,13 +54,15 @@ namespace G__Interpreter
                 //scan separators and operators
                 case '(': AddToken(TokenType.LEFT_PAREN); break;
                 case ')': AddToken(TokenType.RIGHT_PAREN); break;
+                case '{': AddToken(TokenType.LEFT_BRACE); break;
+                case '}': AddToken(TokenType.RIGHT_BRACE); break;
                 case ',': AddToken(TokenType.COMMA); break;
                 case ';': AddToken(TokenType.SEMICOLON); break;
-                case '-': AddToken(TokenType.MINUS); break;
-                case '+': AddToken(TokenType.PLUS); break;
-                case '*': AddToken(TokenType.MULTIPLY); break;
-                case '/': AddToken(TokenType.DIVIDE); break;
-                case '%': AddToken(TokenType.MODULUS); break;
+                case '+': AddToken(TokenType.ADDITION); break;
+                case '-': AddToken(TokenType.SUBSTRACTION); break;
+                case '*': AddToken(TokenType.MULTIPLICATION); break;
+                case '/': AddToken(TokenType.DIVISION); break;
+                case '%': AddToken(TokenType.MODULO); break;
                 case '^': AddToken(TokenType.POWER); break;
                 case '@': AddToken(TokenType.CONCAT); break;
                 case '&': AddToken(TokenType.AND); break;
@@ -79,9 +70,7 @@ namespace G__Interpreter
                 case '!': AddToken(Match('=') ? TokenType.NOT_EQUAL : TokenType.NOT); break;
                 case '<': AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
                 case '>': AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
-                case '=':
-                    if (Match('>')) AddToken(TokenType.LAMBDA);
-                    else AddToken(Match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
+                case '=': AddToken(Match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
                 //scan strings
                 case '\"': ScanString(); break;
                 //scan numbers, identifiers and keywords
@@ -132,8 +121,8 @@ namespace G__Interpreter
                 case "let": AddToken(TokenType.LET, lexeme); break;
                 case "in": AddToken(TokenType.IN, lexeme); break;
                 case "if": AddToken(TokenType.IF, lexeme); break;
+                case "then": AddToken(TokenType.THEN, lexeme); break;
                 case "else": AddToken(TokenType.ELSE, lexeme); break;
-                case "function": AddToken(TokenType.FUNCTION, lexeme); break;
                 case "true":
                 case "false":
                     AddToken(TokenType.BOOLEAN, bool.Parse(lexeme)); break;
@@ -141,7 +130,7 @@ namespace G__Interpreter
                 case "E": AddToken(TokenType.NUMBER, Math.E); break;
                 default:
                     //check if identifier is a keyword
-                    if (Keywords.ContainsKey(lexeme.ToLower()))
+                    if (StandardLibrary.Keywords.Contains(lexeme))
                         throw new Error(ErrorType.LEXICAL, $"Invalid identifier at '{lexeme}'.");
                     else
                         AddToken(TokenType.IDENTIFIER, lexeme);

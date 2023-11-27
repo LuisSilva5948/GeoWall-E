@@ -48,6 +48,17 @@ namespace G__Interpreter
         {
             return this.Scopes.Peek();
         }
+        public void Evaluate(List<Expression> AST)
+        {
+            // Evaluate the expressions
+            foreach (Expression expression in AST)
+            {
+                object result = null;
+                result = Evaluate(expression);
+                if (result != null)
+                    Console.WriteLine(result);
+            }
+        }
         /// <summary>
         /// Evaluates the given expression and returns the result.
         /// </summary>
@@ -102,21 +113,21 @@ namespace G__Interpreter
         {
             switch (Operator.Type)
             {
-                case TokenType.PLUS:
+                case TokenType.ADDITION:
                     CheckNumbers(Operator, left, right);
                     return (double)left + (double)right;
-                case TokenType.MINUS:
+                case TokenType.SUBSTRACTION:
                     CheckNumbers(Operator, left, right);
                     return (double)left - (double)right;
-                case TokenType.MULTIPLY:
+                case TokenType.MULTIPLICATION:
                     CheckNumbers(Operator, left, right);
                     return (double)left * (double)right;
-                case TokenType.DIVIDE:
+                case TokenType.DIVISION:
                     CheckNumbers(Operator, left, right);
                     if ((double)right != 0)
                         return (double)left / (double)right;
                     throw new Error(ErrorType.SEMANTIC, "Division by zero is undefined.");
-                case TokenType.MODULUS:
+                case TokenType.MODULO:
                     CheckNumbers(Operator, left, right);
                     return (double)left % (double)right;
                 case TokenType.POWER:
@@ -167,7 +178,7 @@ namespace G__Interpreter
                 case TokenType.NOT:
                     CheckBoolean(Operator, right);
                     return !(bool)right;
-                case TokenType.MINUS:
+                case TokenType.SUBSTRACTION:
                     CheckNumber(Operator, right);
                     return -(double)right;
                 default:
@@ -179,9 +190,8 @@ namespace G__Interpreter
         /// </summary>
         /// <param name="name">The name of the variable.</param>
         /// <returns>The value of the variable.</returns>
-        public object EvaluateVariable(Token id)
+        public object EvaluateVariable(string name)
         {
-            string name = id.Lexeme;
             return CurrentScope().ContainsKey(name)? CurrentScope()[name] : throw new Error(ErrorType.SEMANTIC, $"Value of {name} wasn't declared.");
         }
         /// <summary>
@@ -195,7 +205,7 @@ namespace G__Interpreter
             foreach (AssignExpression assign in letIn.Assignments)
             {
                 object value = Evaluate(assign.Value);
-                CurrentScope()[assign.ID.Lexeme] = value;
+                CurrentScope()[assign.ID] = value;
             }
             object result = Evaluate(letIn.Body);
             PopScope();
@@ -221,7 +231,7 @@ namespace G__Interpreter
         public object EvaluateFunction(FunctionCall call)
         {
             // Check if the function was declared
-            if (!Memory.DeclaredFunctions.ContainsKey(call.Identifier))
+            if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
                 throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' wasn't declared.");
 
             // Evaluate the arguments
@@ -234,41 +244,41 @@ namespace G__Interpreter
             {
                 case "print":
                     if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '1'");
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
                     return args[0];
                 case "sin":
                     if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '1'");
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
                     if (!IsNumber(args[0]))
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
                     return Math.Sin((double)args[0]);
                 case "cos":
                     if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '1'"); ;
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'"); ;
                     if (!IsNumber(args[0]))
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
                     return Math.Cos((double)args[0]);
                 case "sqrt":
                     if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '1'");
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
                     if (!IsNumber(args[0]))
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
                     return Math.Sqrt((double)args[0]);
                 case "log":
                     if (args.Count != 2)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '2'");
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '2'");
                     if (!IsNumber(args[0], args[1]))
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
                     return Math.Log((double)args[0], (double)args[1]);
                 case "exp":
                     if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '1'");
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
                     if (!IsNumber(args[0]))
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
                     return Math.Exp((double)args[0]);
                 default:
                     // Get the function declaration
-                    FunctionDeclaration function = Memory.DeclaredFunctions[call.Identifier];
+                    FunctionDeclaration function = StandardLibrary.DeclaredFunctions[call.Identifier];
                     // Check the amount of arguments of the function vs the arguments passed
                     if (args.Count != function.Arguments.Count)
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Arguments.Count}'");
@@ -276,7 +286,7 @@ namespace G__Interpreter
                     // Add the evaluated arguments to the scope
                     for (int i = 0; i < function.Arguments.Count; i++)
                     {
-                        string parameterName = function.Arguments[i].ID.Lexeme;
+                        string parameterName = function.Arguments[i].ID;
                         object argumentValue = args[i];
                         CurrentScope()[parameterName] = argumentValue;
                     }

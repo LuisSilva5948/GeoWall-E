@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
@@ -17,25 +18,36 @@ namespace G__Interpreter
     {
         private readonly List<Token> Tokens;    // The list of tokens produced by the lexer
         private int CurrentPosition;            // The current position in the token list
+        private bool IsFunctionDeclaration;     // True if the parser is parsing a function declaration (used for error handling)
 
         public Parser(List<Token> tokens)
         {
             Tokens = tokens;
             CurrentPosition = 0;
+            IsFunctionDeclaration = false;
         }
         /// <summary>
         /// Parses the tokens and constructs an abstract syntax tree (AST).
         /// </summary>
         /// <returns>The abstract syntax tree.</returns>
-        public Expression Parse()
+        public List<Expression> Parse()
         {
-            if (Match(TokenType.FUNCTION))
-                return FunctionDeclaration();
-            Expression AST = Expression();
-            Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
-            if (IsAtEnd())
+            List<Expression> AST = new List<Expression>();
+            try
+            {
+                while (!IsAtEnd())
+                {
+                    IsFunctionDeclaration = false;
+                    Expression instruction = Expression();
+                    Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
+                    AST.Add(instruction);
+                }
                 return AST;
-            throw new Error(ErrorType.SYNTAX, "Invalid Syntax.");
+            }
+            catch(Exception e)
+            {
+                throw new Error(ErrorType.SYNTAX, "Invalid Syntax.");
+            }
         }
         /// <summary>
         /// Parses the global expression.
@@ -106,7 +118,7 @@ namespace G__Interpreter
         private Expression Term()
         {
             Expression expression = Factor();
-            while (Match(TokenType.PLUS, TokenType.MINUS))
+            while (Match(TokenType.ADDITION, TokenType.SUBSTRACTION))
             {
                 Token Operator = Previous();
                 Expression right = Factor();
@@ -120,7 +132,7 @@ namespace G__Interpreter
         private Expression Factor()
         {
             Expression expression = Power();
-            while (Match(TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULUS))
+            while (Match(TokenType.MULTIPLICATION, TokenType.DIVISION, TokenType.MODULO))
             {
                 Token Operator = Previous();
                 Expression right = Power();
@@ -147,7 +159,7 @@ namespace G__Interpreter
         /// </summary>
         private Expression Unary()
         {
-            if (Match(TokenType.NOT, TokenType.MINUS))
+            if (Match(TokenType.NOT, TokenType.SUBSTRACTION))
             {
                 Token Operator = Previous();
                 Expression right = Unary();
@@ -179,9 +191,10 @@ namespace G__Interpreter
         {
             if (Match(TokenType.IDENTIFIER))
             {
-                if (Peek().Type == TokenType.LEFT_PAREN)
-                    return FunctionCall();
-                return new VariableExpression(Previous());
+                Token id = Previous();
+                if (Match(TokenType.LEFT_PAREN))
+                    return FunctionCall(id.Lexeme);
+                return new VariableExpression(id);
             }
             if (Match(TokenType.IF))
                 return IfElseStatement();
@@ -194,9 +207,8 @@ namespace G__Interpreter
         /// </summary>
         public Expression IfElseStatement()
         {
-            Consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'.");
             Expression condition = Expression();
-            Consume(TokenType.RIGHT_PAREN, "Expected ')' after 'if-else' condition.");
+            Consume(TokenType.THEN, "Expected 'then' after 'if-else' condition.");
             Expression thenBranch = Expression();
             Consume(TokenType.ELSE, "Expected 'else' at 'if-else' expression.");
             Expression elseBranch = Expression();
@@ -230,71 +242,65 @@ namespace G__Interpreter
             return new LetInExpression(assignments, body);
         }
         /// <summary>
-        /// Parses a function declaration.
+        /// Parses a function call or declaration.
         /// </summary>
-        public Expression FunctionDeclaration()
+        public Expression FunctionCall(string id)
         {
-            string id = Consume(TokenType.IDENTIFIER, "Expected function name.").Lexeme;
-            // Check if function already exists
-            if (Memory.DeclaredFunctions.ContainsKey(id))
-                throw new Error(ErrorType.SYNTAX, $"Function '{id}' already exists and can't be redefined.");
-            // Add function to declared functions temporarily
-            Memory.DeclaredFunctions[id] = null;
-            Consume(TokenType.LEFT_PAREN, "Expected '(' after function name.");
-            // Parse function arguments
-            List<VariableExpression> arguments = new List<VariableExpression>();
-            if (!Check(TokenType.RIGHT_PAREN))
-            {
-                do
-                {
-                    Expression argument = Expression();
-
-                    if (argument is not VariableExpression variable)
-                        throw new Error(ErrorType.SYNTAX, "Expected valid variable name as an argument in function declaration.");
-                    foreach (VariableExpression arg in arguments)
-                    {
-                        if (arg.ID == variable.ID)
-                            throw new Error(ErrorType.SYNTAX, $"Parameter name '{variable.ID}' cannot be used more than once.");
-                    }
-                    arguments.Add(variable);
-                }
-                while (Match(TokenType.COMMA));
-            }
-            Consume(TokenType.RIGHT_PAREN, "Expected ')' after parameters.");
-            Consume(TokenType.LAMBDA, "Missing '=>' operator in function declaration.");
-            try
-            {
-                Expression body = Expression();
-                FunctionDeclaration function = new FunctionDeclaration(id, arguments, body);
-                // Add function to declared functions permanently
-                Memory.AddFunction(function);
-                return function;
-            }
-            catch (Error e)
-            {
-                Memory.DeclaredFunctions.Remove(id);
-                throw new Error(ErrorType.SYNTAX, $"Invalid declaration of function '{id}'.");
-            }
-        }
-        /// <summary>
-        /// Parses a function call.
-        /// </summary>
-        public Expression FunctionCall()
-        {
-            string id = Previous().Lexeme;
-            Consume(TokenType.LEFT_PAREN, $"Expected '(' after '{id}' call.");
             // Parse function arguments
             List<Expression> arguments = new List<Expression>();
             if (!Check(TokenType.RIGHT_PAREN))
             {
                 do
                 {
-                    arguments.Add(Expression());
+                    Expression argument = Expression();
+                    arguments.Add(argument);
                 }
                 while (Match(TokenType.COMMA));
             }
             Consume(TokenType.RIGHT_PAREN, $"Expected ')' after '{id}' arguments.");
+            // Check if function is being declared or called
+            if (Match(TokenType.ASSIGN))
+                return FunctionDeclaration(id, arguments);
             return new FunctionCall(id, arguments);
+        }
+        /// <summary>
+        /// Parses a function declaration.
+        /// </summary>
+        public Expression FunctionDeclaration(string id, List<Expression> arguments)
+        {
+            // Set flag to true to not parse another FunctionDeclaration inside this one 
+            IsFunctionDeclaration = true;
+            // Check if function already exists
+            if (StandardLibrary.DeclaredFunctions.ContainsKey(id))
+                throw new Error(ErrorType.SYNTAX, $"Function '{id}' already exists and can't be redefined.");
+            // Add function to declared functions temporarily
+            StandardLibrary.DeclaredFunctions[id] = null;
+            List<VariableExpression> parameters = new List<VariableExpression>();
+            // Check if arguments are parameters and are not repeated
+            foreach (Expression argument in arguments)
+            {
+                if (argument is not VariableExpression parameter)
+                    throw new Error(ErrorType.SYNTAX, "Expected valid variable name as parameter in function declaration.");
+                if (parameters.Contains(parameter))
+                {
+                    throw new Error(ErrorType.SYNTAX, $"Parameter name '{parameter.ID}' cannot be used more than once.");
+                }
+                parameters.Add(parameter);
+            }
+            try
+            {
+                Expression body = Expression();
+                FunctionDeclaration function = new FunctionDeclaration(id, parameters, body);
+                // Add function to declared functions permanently
+                StandardLibrary.AddFunction(function);
+                return function;
+            }
+            catch (Error e)
+            {
+                // Remove invalid function from declared functions
+                StandardLibrary.DeclaredFunctions.Remove(id);
+                throw new Error(ErrorType.SYNTAX, $"Invalid declaration of function '{id}'.");
+            }
         }
 
         #region Helper Methods

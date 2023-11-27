@@ -76,12 +76,12 @@ namespace G__Interpreter
     /// </summary>
     public class AssignExpression : Expression
     {
-        public Token ID { get; }
+        public string ID { get; }
         public Expression Value { get; }
 
         public AssignExpression(Token id, Expression value)
         {
-            ID = id;
+            ID = id.Lexeme;
             Value = value;
         }
     }
@@ -91,11 +91,11 @@ namespace G__Interpreter
     /// </summary>
     public class VariableExpression : Expression
     {
-        public Token ID { get; }
+        public string ID { get; }
 
         public VariableExpression(Token id)
         {
-            ID = id;
+            ID = id.Lexeme;
         }
     }
 
