@@ -46,6 +46,9 @@ namespace G__Interpreter
             }
             catch(Exception e)
             {
+                if (e is Error error)
+                    throw error;
+                else
                 throw new Error(ErrorType.SYNTAX, "Invalid Syntax.");
             }
         }
@@ -234,8 +237,9 @@ namespace G__Interpreter
                 {
                     throw new Error(ErrorType.SYNTAX, $"Expected value of '{id.Lexeme}' after '='.");
                 }
+                Consume(TokenType.SEMICOLON, $"Expected ';' after assignment of '{id}'.");
             }
-            while (Match(TokenType.COMMA));
+            while (Peek().Type == TokenType.IDENTIFIER);
 
             Consume(TokenType.IN, "Expected 'in' at 'let-in' expression.");
             Expression body = Expression();

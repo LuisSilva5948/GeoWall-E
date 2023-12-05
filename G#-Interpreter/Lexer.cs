@@ -123,16 +123,18 @@ namespace G__Interpreter
                 case "if": AddToken(TokenType.IF, lexeme); break;
                 case "then": AddToken(TokenType.THEN, lexeme); break;
                 case "else": AddToken(TokenType.ELSE, lexeme); break;
+                case "point": AddToken(TokenType.POINT, lexeme); break;
+                case "line": AddToken(TokenType.LINE, lexeme); break;
+                case "segment": AddToken(TokenType.SEGMENT, lexeme); break;
+                case "ray": AddToken(TokenType.RAY, lexeme); break;
+                case "circle": AddToken(TokenType.CIRCLE, lexeme); break;
+                case "sequence": AddToken(TokenType.SEQUENCE, lexeme); break;
                 case "true":
                 case "false":
                     AddToken(TokenType.BOOLEAN, bool.Parse(lexeme)); break;
                 case "PI": AddToken(TokenType.NUMBER, Math.PI); break;
                 case "E": AddToken(TokenType.NUMBER, Math.E); break;
                 default:
-                    //check if identifier is a keyword
-                    if (StandardLibrary.Keywords.Contains(lexeme))
-                        throw new Error(ErrorType.LEXICAL, $"Invalid identifier at '{lexeme}'.");
-                    else
                         AddToken(TokenType.IDENTIFIER, lexeme);
                     break;
             }

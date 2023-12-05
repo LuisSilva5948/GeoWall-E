@@ -17,6 +17,12 @@ namespace G__Interpreter
         IF,             // Represents the "if" keyword
         THEN,           // Represents the "then" keyword
         ELSE,           // Represents the "else" keyword
+        POINT,          // Represents the "point" keyword
+        LINE,           // Represents the "line" keyword
+        SEGMENT,        // Represents the "segment" keyword
+        RAY,            // Represents the "ray" keyword
+        CIRCLE,         // Represents the "circle" keyword
+        SEQUENCE,       // Represents the "sequence" keyword
 
         // Constants
         PI,             // Represents the "pi" constant
