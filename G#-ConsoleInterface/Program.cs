@@ -24,7 +24,11 @@ namespace G__ConsoleInterface
                 else
                 if (line != null && line != "")
                 {
-                    interpreter.Run(line);
+                    var results = interpreter.Run(line);
+                    foreach (var result in results)
+                    {
+                        Console.WriteLine(result);
+                    }
                 }
                 else
                 {

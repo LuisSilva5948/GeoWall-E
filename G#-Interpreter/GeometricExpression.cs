@@ -9,6 +9,14 @@ namespace G__Interpreter
     public class GeometricExpression : Expression
     {
     }
+    public class MeasureExpression : GeometricExpression
+    {
+        public double Value { get; }
+        public MeasureExpression(double value)
+        {
+            Value = value;
+        }
+    }
     public class PointExpression : GeometricExpression
     {
         public Expression X { get; }

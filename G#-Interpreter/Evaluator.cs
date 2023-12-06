@@ -16,7 +16,7 @@ namespace G__Interpreter
     public class Evaluator
     {
         private Stack<Dictionary<string, object>> Scopes;   // The stack of scopes
-        private readonly int CallLimit = 10000;             // The maximum amount of calls allowed
+        private readonly int CallLimit = 1000;              // The maximum amount of calls allowed
         private int Calls;                                  // The amount of calls made
 
         public Evaluator()
@@ -48,16 +48,17 @@ namespace G__Interpreter
         {
             return this.Scopes.Peek();
         }
-        public void Evaluate(List<Expression> AST)
+        public List<object> Evaluate(List<Expression> AST)
         {
+            List<object> Results = new List<object>();
             // Evaluate the expressions
             foreach (Expression expression in AST)
             {
-                object result = null;
-                result = Evaluate(expression);
-                if (result != null)
-                    Console.WriteLine(result);
+                object result = Evaluate(expression);
+                if (result is not null)
+                    Results.Add(result);
             }
+            return Results;
         }
         /// <summary>
         /// Evaluates the given expression and returns the result.
@@ -72,35 +73,35 @@ namespace G__Interpreter
             Calls++;
 
             // Evaluate the expression
-
-            if (expression is LiteralExpression literal)
-                return literal.Value;
-
-            else if (expression is UnaryExpression unary)
-                return EvaluateUnary(unary.Operator, Evaluate(unary.Right));
-
-            else if (expression is BinaryExpression binary)
-                return EvaluateBinary(Evaluate(binary.Left), binary.Operator, Evaluate(binary.Right));
-
-            else if (expression is GroupingExpression grouping)
-                return Evaluate(grouping.Expression);
-
-            else if (expression is VariableExpression variable)
-                return EvaluateVariable(variable.ID);
-
-            else if (expression is IfElseStatement ifElse)
-                return EvaluateIfElse(ifElse);
-
-            else if (expression is LetInExpression letIn)
-                return EvaluateLetIn(letIn);
-
-            else if (expression is FunctionDeclaration function)
-                return $"Function '{function.Identifier}' was declared succesfully.";
-
-            else if (expression is FunctionCall call)
-                return EvaluateFunction(call);
-
-            else return null;
+            switch (expression)
+            {
+                case null:
+                    return null;
+                case LiteralExpression literal:
+                    return literal.Value;
+                case UnaryExpression unary:
+                    return EvaluateUnary(unary.Operator, Evaluate(unary.Right));
+                case BinaryExpression binary:
+                    return EvaluateBinary(Evaluate(binary.Left), binary.Operator, Evaluate(binary.Right));
+                case GroupingExpression grouping:
+                    return Evaluate(grouping.Expression);
+                case VariableExpression variable:
+                    return EvaluateVariable(variable.ID);
+                case AssignExpression assign:
+                    return CurrentScope()[assign.ID] = Evaluate(assign.Value);
+                case IfElseStatement ifElse:
+                    return EvaluateIfElse(ifElse);
+                case LetInExpression letIn:
+                    return EvaluateLetIn(letIn);
+                case FunctionDeclaration function:
+                    return $"Function '{function.Identifier}' was declared succesfully.";
+                case FunctionCall call:
+                    return EvaluateFunction(call);
+                case GeometricExpression geometric:
+                    return geometric;
+                default:
+                    return null;
+            }   
         }
         /// <summary>
         /// Evaluates a binary expression by performing the corresponding operation on the left and right operands.
@@ -114,8 +115,19 @@ namespace G__Interpreter
             switch (Operator.Type)
             {
                 case TokenType.ADDITION:
-                    CheckNumbers(Operator, left, right);
+                    try
+                    {
+                        CheckNumbers(Operator, left, right);
+                    }
+                    catch(Error)
+                    {
+                        if (left is string || right is string)
+                            return left.ToString() + right.ToString();
+                        throw new Error(ErrorType.SEMANTIC, $"Operands must be Numbers or Strings in '{Operator.Lexeme}' operation.");
+                    }
                     return (double)left + (double)right;
+
+
                 case TokenType.SUBSTRACTION:
                     CheckNumbers(Operator, left, right);
                     return (double)left - (double)right;
@@ -280,13 +292,13 @@ namespace G__Interpreter
                     // Get the function declaration
                     FunctionDeclaration function = StandardLibrary.DeclaredFunctions[call.Identifier];
                     // Check the amount of arguments of the function vs the arguments passed
-                    if (args.Count != function.Arguments.Count)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Arguments.Count}'");
+                    if (args.Count != function.Parameters.Count)
+                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
                     PushScope();
                     // Add the evaluated arguments to the scope
-                    for (int i = 0; i < function.Arguments.Count; i++)
+                    for (int i = 0; i < function.Parameters.Count; i++)
                     {
-                        string parameterName = function.Arguments[i].ID;
+                        string parameterName = function.Parameters[i].ID;
                         object argumentValue = args[i];
                         CurrentScope()[parameterName] = argumentValue;
                     }

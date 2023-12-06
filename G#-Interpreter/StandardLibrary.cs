@@ -12,7 +12,7 @@ namespace G__Interpreter
     public static class StandardLibrary
     {
         public static Dictionary<string, FunctionDeclaration> DeclaredFunctions { get; private set; }   // The dictionary of declared functions
-
+        public static Dictionary<string, object> GlobalVariables { get; private set; }                  // The dictionary of global variables
         /// <summary>
         /// Initializes a dictionary of declared functions and adds the predefined functions to it.
         /// </summary>
@@ -25,6 +25,7 @@ namespace G__Interpreter
             DeclaredFunctions["cos"] = null;
             DeclaredFunctions["log"] = null;
             DeclaredFunctions["exp"] = null;
+            GlobalVariables = new Dictionary<string, object>();
         }
         /// <summary>
         /// Adds a function declaration to the dictionary of declared functions.

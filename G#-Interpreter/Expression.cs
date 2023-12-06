@@ -70,20 +70,6 @@ namespace G__Interpreter
         }
     }
 
-    /// <summary>
-    /// Represents an assignment expression, where a value is assigned to a variable identified by a token.
-    /// </summary>
-    public class AssignExpression : Expression
-    {
-        public string ID { get; }
-        public Expression Value { get; }
-
-        public AssignExpression(Token id, Expression value)
-        {
-            ID = id.Lexeme;
-            Value = value;
-        }
-    }
 
     /// <summary>
     /// Represents a variable expression identified by a token.
@@ -131,18 +117,33 @@ namespace G__Interpreter
     }
 
     /// <summary>
+    /// Represents an assignment expression, where a value is assigned to a variable identified by a token.
+    /// </summary>
+    public class AssignExpression : Expression
+    {
+        public string ID { get; }
+        public Expression Value { get; }
+
+        public AssignExpression(Token id, Expression value)
+        {
+            ID = id.Lexeme;
+            Value = value;
+        }
+    }
+
+    /// <summary>
     /// Represents a function declaration with an identifier, a list of argument variable expressions, and a body expression.
     /// </summary>
     public class FunctionDeclaration : Expression
     {
         public string Identifier { get; }
-        public List<VariableExpression> Arguments { get; }
+        public List<VariableExpression> Parameters { get; }
         public Expression Body { get; }
 
-        public FunctionDeclaration(string identifier, List<VariableExpression> arguments, Expression body)
+        public FunctionDeclaration(string identifier, List<VariableExpression> parameters, Expression body)
         {
             Identifier = identifier;
-            Arguments = arguments;
+            Parameters = parameters;
             Body = body;
         }
     }

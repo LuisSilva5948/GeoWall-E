@@ -92,25 +92,11 @@ namespace G__Interpreter
         /// </summary>
         private Expression Comparison()
         {
-            Expression expression = Concatenation();
+            Expression expression = Term();
             while (Match(TokenType.GREATER_EQUAL, TokenType.GREATER, TokenType.LESS, TokenType.LESS_EQUAL))
             {
                 Token Operator = Previous();
-                Expression right = Concatenation();
-                expression = new BinaryExpression(expression, Operator, right);
-            }
-            return expression;
-        }
-        /// <summary>
-        /// Parses a concatenation expression (@).
-        /// </summary>
-        private Expression Concatenation()
-        {
-            Expression expression = Term();
-            while (Match(TokenType.CONCAT))
-            {
-                Token Operator = Previous();
-                Expression right = Concatenation();
+                Expression right = Term();
                 expression = new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -185,25 +171,20 @@ namespace G__Interpreter
                 Consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
                 return new GroupingExpression(expression);
             }
-            return Primary();
-        }
-        /// <summary>
-        /// Parses a primary expression (function call, variable, if-else, let-in).
-        /// </summary>
-        public Expression Primary()
-        {
             if (Match(TokenType.IDENTIFIER))
             {
                 Token id = Previous();
                 if (Match(TokenType.LEFT_PAREN))
                     return FunctionCall(id.Lexeme);
+                if (Match(TokenType.ASSIGN))
+                    return new AssignExpression(id, Expression());
                 return new VariableExpression(id);
             }
-            if (Match(TokenType.IF))
+            else if (Match(TokenType.IF))
                 return IfElseStatement();
-            if (Match(TokenType.LET))
+            else if (Match(TokenType.LET))
                 return LetInExpression();
-            throw new Error(ErrorType.SYNTAX, "Expected expression.");
+            throw new Error(ErrorType.SYNTAX, $"Expected expression after '{Previous().Lexeme}'.");
         }
         /// <summary>
         /// Parses an if-else statement.
@@ -233,7 +214,7 @@ namespace G__Interpreter
                     Expression value = Expression();
                     assignments.Add(new AssignExpression(id, value));
                 }
-                catch (Error e)
+                catch (Error)
                 {
                     throw new Error(ErrorType.SYNTAX, $"Expected value of '{id.Lexeme}' after '='.");
                 }
@@ -299,7 +280,7 @@ namespace G__Interpreter
                 StandardLibrary.AddFunction(function);
                 return function;
             }
-            catch (Error e)
+            catch (Error)
             {
                 // Remove invalid function from declared functions
                 StandardLibrary.DeclaredFunctions.Remove(id);
