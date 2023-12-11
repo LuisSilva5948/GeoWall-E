@@ -162,4 +162,11 @@ namespace G__Interpreter
             Arguments = arguments;
         }
     }
+    /// <summary>
+    /// Class that representes undefined or null expressions.
+    /// </summary>
+    public class UndefinedExpression : Expression
+    {
+        public UndefinedExpression() { }
+    }
 }
