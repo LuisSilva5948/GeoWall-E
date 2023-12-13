@@ -7,6 +7,21 @@ using System.Threading.Tasks;
 namespace G__Interpreter
 {
     public abstract class Sequence { }
+
+    //three types of sequences: infinite, finite(range) and values(array)
+    /*public class ValuesSequence : Sequence
+    {
+        public List<Expression> Values { get; private set; }
+        public TypeSequence SequenceType = TypeSequence.Values;
+        public override TypeSequence GetSequenceType => SequenceType;
+
+        public ValuesSecquence(List<Expression> secquenceValues)
+        {
+            this.secquenceValues = secquenceValues;
+            expressionLine = Parser.GetLine;
+        }
+
+    }*/
     public class FiniteSequence : Expression
     {
         public List<Expression> Elements { get; }

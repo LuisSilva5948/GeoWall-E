@@ -57,8 +57,17 @@ namespace G__Interpreter
         /// </summary>
         private Expression Expression()
         {
+            if (Match(TokenType.IDENTIFIER))
+                if (Peek().Type == TokenType.COMMA)
+                    return MultipleAssignments(Previous());
             return Logical();
         }
+
+        private Expression MultipleAssignments(Token token)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Parses a logical expression (&, |).
         /// </summary>
@@ -171,6 +180,10 @@ namespace G__Interpreter
                 Consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
                 return new GroupingExpression(expression);
             }
+            if (Match(TokenType.LEFT_BRACE))
+            {
+                return ParseSequence();
+            }
             if (Match(TokenType.IDENTIFIER))
             {
                 Token id = Previous();
@@ -186,6 +199,7 @@ namespace G__Interpreter
                 return LetInExpression();
             throw new Error(ErrorType.SYNTAX, $"Expected expression after '{Previous().Lexeme}'.");
         }
+
         /// <summary>
         /// Parses an if-else statement.
         /// </summary>
@@ -287,6 +301,12 @@ namespace G__Interpreter
                 throw new Error(ErrorType.SYNTAX, $"Invalid declaration of function '{id}'.");
             }
         }
+        private Expression ParseSequence()
+        {
+            throw new NotImplementedException();
+            if (Match(TokenType.RIGHT_BRACE)) return Expression();
+        }
+
 
         #region Helper Methods
         /// <summary>

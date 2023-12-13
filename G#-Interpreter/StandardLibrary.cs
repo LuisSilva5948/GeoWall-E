@@ -19,7 +19,6 @@ namespace G__Interpreter
         public static void Initialize()
         {
             DeclaredFunctions = new Dictionary<string, FunctionDeclaration>();
-            DeclaredFunctions["print"] = null;
             DeclaredFunctions["sqrt"] = null;
             DeclaredFunctions["sin"] = null;
             DeclaredFunctions["cos"] = null;

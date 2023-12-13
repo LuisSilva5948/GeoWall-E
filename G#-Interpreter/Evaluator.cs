@@ -254,10 +254,6 @@ namespace G__Interpreter
             }
             switch (call.Identifier)
             {
-                case "print":
-                    if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
-                    return args[0];
                 case "sin":
                     if (args.Count != 1)
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
