@@ -39,7 +39,7 @@ namespace G__Interpreter
                 while (!IsAtEnd())
                 {
                     IsFunctionDeclaration = false;
-                    Expression instruction = ParseExpression();
+                    Expression instruction = ParseInstruction();
                     Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
                     AST.Add(instruction);
                 }
@@ -54,17 +54,15 @@ namespace G__Interpreter
             }
         }
         /// <summary>
-        /// Parses the global expression.
+        /// Parses an instruction that can be an expression or a statement.
         /// </summary>
-        private Expression ParseExpression()
+        private Expression ParseInstruction()
         {
             if (Peek().Type == TokenType.IDENTIFIER) {
                 if (PeekNext().Type == TokenType.COMMA)
                     return ParseMultipleAssignments();
                 if (PeekNext().Type == TokenType.ASSIGN)
                     return ParseAssignment();
-                if (PeekNext().Type == TokenType.LEFT_PAREN)
-                    return FunctionCall(Advance().Lexeme);
             }
             if (Match(TokenType.COLOR))
                 return ParseColor();
@@ -93,6 +91,15 @@ namespace G__Interpreter
             if (Match(TokenType.LET))
                 return ParseLet();
 
+            return ParseExpression();
+        }
+
+        private Expression ParseExpression()
+        {
+            if (Match(TokenType.IF))
+                return ParseIf();
+            if (Match(TokenType.LET))
+                return ParseLet();
             return ParseLogical();
         }
 

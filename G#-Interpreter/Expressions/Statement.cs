@@ -17,16 +17,23 @@ namespace G__Interpreter
             Expression = expression;
         }
     }
-    public class AssignStatement : Statement
+    public class AssignmentStatement : Statement
     {
+        public Token Identifier { get; }
+        public Expression Value { get; }
+        public AssignmentStatement(Token identifier, Expression value)
+        {
+            Identifier = identifier;
+            Value = value;
+        }
     }
     public class IfStatement : Statement
     {
         public Expression Condition { get; }
-        public Statement ThenBranch { get; }
-        public Statement ElseBranch { get; }
+        public ExpressionStatement ThenBranch { get; }
+        public ExpressionStatement ElseBranch { get; }
 
-        public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch)
+        public IfStatement(Expression condition, ExpressionStatement thenBranch, ExpressionStatement elseBranch)
         {
             Condition = condition;
             ThenBranch = thenBranch;

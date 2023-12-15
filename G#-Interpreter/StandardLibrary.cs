@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace G__Interpreter
 {
     /// <summary>
-    /// Represents the standar library of the G# language.
+    /// Represents the standard library of the G# language.
     /// </summary>
     public static class StandardLibrary
     {
@@ -19,6 +19,7 @@ namespace G__Interpreter
         public static void Initialize()
         {
             DeclaredFunctions = new Dictionary<string, FunctionDeclaration>();
+            DeclaredFunctions["print"] = null;
             DeclaredFunctions["sqrt"] = null;
             DeclaredFunctions["sin"] = null;
             DeclaredFunctions["cos"] = null;
@@ -42,7 +43,10 @@ namespace G__Interpreter
         {
             return GlobalVariables[identifier];
         }
-        public static object Sqrt(List<object> arguments)
+
+
+        #region Predefined Functions
+        public static double Sqrt(List<object> arguments)
         {
             if (arguments.Count != 1)
             {
@@ -57,7 +61,7 @@ namespace G__Interpreter
                 throw new Error(ErrorType.SEMANTIC, "The sqrt function expects a numeric argument.");
             }
         }
-        public static object Sin(List<object> arguments)
+        public static double Sin(List<object> arguments)
         {
             if (arguments.Count != 1)
             {
@@ -72,7 +76,7 @@ namespace G__Interpreter
                 throw new Error(ErrorType.SEMANTIC, "The sin function expects a numeric argument.");
             }
         }
-        public static object Cos(List<object> arguments)
+        public static double Cos(List<object> arguments)
         {
             if (arguments.Count != 1)
             {
@@ -87,22 +91,29 @@ namespace G__Interpreter
                 throw new Error(ErrorType.SEMANTIC, "The cos function expects a numeric argument.");
             }
         }
-        public static object Log(List<object> arguments)
+        public static double Log(List<object> arguments)
         {
-            if (arguments.Count != 1)
+            if (arguments.Count != 2)
             {
                 throw new Error(ErrorType.SEMANTIC, "The log function expects exactly one argument.");
             }
-            if (arguments[0] is double)
+            if (arguments[0] is double a && arguments[1] is double b)
             {
-                return Math.Log((double)arguments[0]);
+                if (a > 0 && b > 0 && b != 1)
+                {
+                    return Math.Log(a, b);
+                }
+                else
+                {
+                    throw new Error(ErrorType.SEMANTIC, "The log function was called with invalid arguments.");
+                }
             }
             else
             {
                 throw new Error(ErrorType.SEMANTIC, "The log function expects a numeric argument.");
             }
         }
-        public static object Exp(List<object> arguments)
+        public static double Exp(List<object> arguments)
         {
             if (arguments.Count != 1)
             {
@@ -117,5 +128,6 @@ namespace G__Interpreter
                 throw new Error(ErrorType.SEMANTIC, "The exp function expects a numeric argument.");
             }
         }
+        #endregion
     }
 }

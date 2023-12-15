@@ -256,35 +256,15 @@ namespace G__Interpreter
                         throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
                     return args[0];
                 case "sin":
-                    if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
-                    if (!IsNumber(args[0]))
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
-                    return Math.Sin((double)args[0]);
+                    return StandardLibrary.Sin(args);
                 case "cos":
-                    if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'"); ;
-                    if (!IsNumber(args[0]))
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
-                    return Math.Cos((double)args[0]);
+                    return StandardLibrary.Cos(args);
                 case "sqrt":
-                    if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
-                    if (!IsNumber(args[0]))
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
-                    return Math.Sqrt((double)args[0]);
+                    return StandardLibrary.Sqrt(args);
                 case "log":
-                    if (args.Count != 2)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '2'");
-                    if (!IsNumber(args[0], args[1]))
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
-                    return Math.Log((double)args[0], (double)args[1]);
+                    return StandardLibrary.Log(args);
                 case "exp":
-                    if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
-                    if (!IsNumber(args[0]))
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' can only receives 'Number'.");
-                    return Math.Exp((double)args[0]);
+                    return StandardLibrary.Exp(args);
                 default:
                     // Get the function declaration
                     FunctionDeclaration function = StandardLibrary.DeclaredFunctions[call.Identifier];
