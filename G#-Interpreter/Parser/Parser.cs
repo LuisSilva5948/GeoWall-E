@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection.Metadata;
@@ -38,7 +39,7 @@ namespace G__Interpreter
                 while (!IsAtEnd())
                 {
                     IsFunctionDeclaration = false;
-                    Expression instruction = Expression();
+                    Expression instruction = ParseExpression();
                     Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
                     AST.Add(instruction);
                 }
@@ -55,29 +56,56 @@ namespace G__Interpreter
         /// <summary>
         /// Parses the global expression.
         /// </summary>
-        private Expression Expression()
+        private Expression ParseExpression()
         {
-            if (Match(TokenType.IDENTIFIER))
-                if (Peek().Type == TokenType.COMMA)
-                    return MultipleAssignments(Previous());
-            return Logical();
-        }
+            if (Peek().Type == TokenType.IDENTIFIER) {
+                if (PeekNext().Type == TokenType.COMMA)
+                    return ParseMultipleAssignments();
+                if (PeekNext().Type == TokenType.ASSIGN)
+                    return ParseAssignment();
+                if (PeekNext().Type == TokenType.LEFT_PAREN)
+                    return FunctionCall(Advance().Lexeme);
+            }
+            if (Match(TokenType.COLOR))
+                return ParseColor();
+            if (Match(TokenType.DRAW))
+                return ParseDraw();
+            if (Match(TokenType.RESTORE))
+                return ParseRestore();
+            if (Match(TokenType.IMPORT))
+                return ParseImport();
+            if (Match(TokenType.POINT))
+                return ParsePoint();
+            if (Match(TokenType.LINE))
+                return ParseLine();
+            if (Match(TokenType.SEGMENT))
+                return ParseSegment();
+            if (Match(TokenType.RAY))
+                return ParseRay();
+            if (Match(TokenType.CIRCLE))
+                return ParseCircle();
+            if (Match(TokenType.ARC))
+                return ParseArc();
+            if (Match(TokenType.MEASURE))
+                return ParseMeasure();
+            if (Match(TokenType.IF))
+                return ParseIf();
+            if (Match(TokenType.LET))
+                return ParseLet();
 
-        private Expression MultipleAssignments(Token token)
-        {
-            throw new NotImplementedException();
+            return ParseLogical();
         }
 
         /// <summary>
         /// Parses a logical expression (&, |).
         /// </summary>
-        private Expression Logical()
+        private Expression ParseLogical()
         {
-            Expression expression = Equality();
+            Expression expression = ParseEquality();
             while (Match(TokenType.AND, TokenType.OR))
             {
                 Token Operator = Previous();
-                Expression right = Equality();
+                Expression right = ParseEquality();
                 expression = new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -85,13 +113,13 @@ namespace G__Interpreter
         /// <summary>
         /// Parses an equality expression (==, !=).
         /// </summary>
-        private Expression Equality()
+        private Expression ParseEquality()
         {
-            Expression expression = Comparison();
+            Expression expression = ParseComparison();
             while (Match(TokenType.EQUAL, TokenType.NOT_EQUAL))
             {
                 Token Operator = Previous();
-                Expression right = Comparison();
+                Expression right = ParseComparison();
                 expression = new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -99,13 +127,13 @@ namespace G__Interpreter
         /// <summary>
         /// Parses a comparison expression (>=, >, <, <=).
         /// </summary>
-        private Expression Comparison()
+        private Expression ParseComparison()
         {
-            Expression expression = Term();
+            Expression expression = ParseTerm();
             while (Match(TokenType.GREATER_EQUAL, TokenType.GREATER, TokenType.LESS, TokenType.LESS_EQUAL))
             {
                 Token Operator = Previous();
-                Expression right = Term();
+                Expression right = ParseTerm();
                 expression = new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -113,13 +141,13 @@ namespace G__Interpreter
         /// <summary>
         /// Parses a term expression (+, -).
         /// </summary>
-        private Expression Term()
+        private Expression ParseTerm()
         {
-            Expression expression = Factor();
+            Expression expression = ParseFactor();
             while (Match(TokenType.ADDITION, TokenType.SUBSTRACTION))
             {
                 Token Operator = Previous();
-                Expression right = Factor();
+                Expression right = ParseFactor();
                 expression = new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -127,13 +155,13 @@ namespace G__Interpreter
         /// <summary>
         /// Parses a factor expression (*, /, %).
         /// </summary>
-        private Expression Factor()
+        private Expression ParseFactor()
         {
-            Expression expression = Power();
+            Expression expression = ParsePower();
             while (Match(TokenType.MULTIPLICATION, TokenType.DIVISION, TokenType.MODULO))
             {
                 Token Operator = Previous();
-                Expression right = Power();
+                Expression right = ParsePower();
                 expression = new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -141,13 +169,13 @@ namespace G__Interpreter
         /// <summary>
         /// Parses a power expression (^).
         /// </summary>
-        private Expression Power()
+        private Expression ParsePower()
         {
-            Expression expression = Unary();
+            Expression expression = ParseUnary();
             if (Match(TokenType.POWER))
             {
                 Token Operator = Previous();
-                Expression right = Unary();
+                Expression right = ParseUnary();
                 return new BinaryExpression(expression, Operator, right);
             }
             return expression;
@@ -155,20 +183,20 @@ namespace G__Interpreter
         /// <summary>
         /// Parses a unary expression (!, -).
         /// </summary>
-        private Expression Unary()
+        private Expression ParseUnary()
         {
             if (Match(TokenType.NOT, TokenType.SUBSTRACTION))
             {
                 Token Operator = Previous();
-                Expression right = Unary();
+                Expression right = ParseUnary();
                 return new UnaryExpression(Operator, right);
             }
-            return Literal();
+            return ParseLiteral();
         }
         /// <summary>
         /// Parses a literal expression (number, string, boolean, group).
         /// </summary>
-        private Expression Literal()
+        private Expression ParseLiteral()
         {
             if (Match(TokenType.BOOLEAN, TokenType.NUMBER, TokenType.STRING))
             {
@@ -176,7 +204,7 @@ namespace G__Interpreter
             }
             if (Match(TokenType.LEFT_PAREN))
             {
-                Expression expression = Expression();
+                Expression expression = ParseExpression();
                 Consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
                 return new GroupingExpression(expression);
             }
@@ -190,32 +218,28 @@ namespace G__Interpreter
                 if (Match(TokenType.LEFT_PAREN))
                     return FunctionCall(id.Lexeme);
                 if (Match(TokenType.ASSIGN))
-                    return new AssignExpression(id, Expression());
+                    return new AssignExpression(id, ParseExpression());
                 return new VariableExpression(id);
             }
-            else if (Match(TokenType.IF))
-                return IfElseStatement();
-            else if (Match(TokenType.LET))
-                return LetInExpression();
             throw new Error(ErrorType.SYNTAX, $"Expected expression after '{Previous().Lexeme}'.");
         }
 
         /// <summary>
         /// Parses an if-else statement.
         /// </summary>
-        public Expression IfElseStatement()
+        public Expression ParseIf()
         {
-            Expression condition = Expression();
+            Expression condition = ParseExpression();
             Consume(TokenType.THEN, "Expected 'then' after 'if-else' condition.");
-            Expression thenBranch = Expression();
+            Expression thenBranch = ParseExpression();
             Consume(TokenType.ELSE, "Expected 'else' at 'if-else' expression.");
-            Expression elseBranch = Expression();
+            Expression elseBranch = ParseExpression();
             return new IfElseStatement(condition, thenBranch, elseBranch);
         }
         /// <summary>
         /// Parses a let-in expression.
         /// </summary>
-        public Expression LetInExpression()
+        public Expression ParseLet()
         {
             // Parse variable assignments
             List<AssignExpression> assignments = new List<AssignExpression>();
@@ -225,7 +249,7 @@ namespace G__Interpreter
                 Consume(TokenType.ASSIGN, $"Expected '=' when initializing variable '{id.Lexeme}'.");
                 try
                 {
-                    Expression value = Expression();
+                    Expression value = ParseExpression();
                     assignments.Add(new AssignExpression(id, value));
                 }
                 catch (Error)
@@ -237,7 +261,7 @@ namespace G__Interpreter
             while (Peek().Type == TokenType.IDENTIFIER);
 
             Consume(TokenType.IN, "Expected 'in' at 'let-in' expression.");
-            Expression body = Expression();
+            Expression body = ParseExpression();
             return new LetInExpression(assignments, body);
         }
         /// <summary>
@@ -251,7 +275,7 @@ namespace G__Interpreter
             {
                 do
                 {
-                    Expression argument = Expression();
+                    Expression argument = ParseExpression();
                     arguments.Add(argument);
                 }
                 while (Match(TokenType.COMMA));
@@ -288,7 +312,7 @@ namespace G__Interpreter
             }
             try
             {
-                Expression body = Expression();
+                Expression body = ParseExpression();
                 FunctionDeclaration function = new FunctionDeclaration(id, parameters, body);
                 // Add function to declared functions permanently
                 StandardLibrary.AddFunction(function);
@@ -304,8 +328,74 @@ namespace G__Interpreter
         private Expression ParseSequence()
         {
             throw new NotImplementedException();
-            if (Match(TokenType.RIGHT_BRACE)) return Expression();
+            if (Match(TokenType.RIGHT_BRACE)) return ParseExpression();
         }
+
+        private Expression ParseMeasure()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseArc()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseCircle()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseRay()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseSegment()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseLine()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParsePoint()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseImport()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseRestore()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseDraw()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseColor()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseAssignment()
+        {
+            throw new NotImplementedException();
+        }
+
+        private Expression ParseMultipleAssignments()
+        {
+            throw new NotImplementedException();
+        }
+
 
 
         #region Helper Methods
@@ -350,7 +440,7 @@ namespace G__Interpreter
         /// <summary>
         /// Advances the current position to the next token and returns the previous token.
         /// </summary>
-        /// <returns>The previous token.</returns>
+        /// <returns>The current token before advancing.</returns>
         private Token Advance()
         {
             if (!IsAtEnd()) CurrentPosition++;
@@ -365,7 +455,14 @@ namespace G__Interpreter
         {
             return Tokens[CurrentPosition];
         }
-
+        /// <summary>
+        /// Returns the token after the current token.
+        /// </summary>
+        /// <returns>Returns the token after the current token.</returns>
+        private Token PeekNext()
+        {
+            return Tokens[CurrentPosition + 1];
+        }
         /// <summary>
         /// Returns the previous token.
         /// </summary>

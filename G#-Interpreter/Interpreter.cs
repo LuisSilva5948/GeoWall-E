@@ -28,6 +28,11 @@ namespace G__Interpreter
                 // Lexing: Convert the source code into a sequence of Tokens
                 Lexer lexer = new Lexer(source);
                 List<Token> tokens = lexer.ScanTokens();
+                // Check for errors in the lexer
+                if (lexer.Errors.Count > 0)
+                {
+                    return new List<object>() { lexer.Errors };
+                }
 
                 // Parsing: Build an abstract syntax tree (AST) from the Tokens
                 Parser parser = new Parser(tokens);

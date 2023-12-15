@@ -14,6 +14,7 @@ namespace G__Interpreter
         private List<Token> Tokens;                     // The list of Tokens
         private int StartofLexeme;                      // The start of the current lexeme
         private int CurrentPosition;                    // The current position in the source code
+        public List<Error> Errors { get; private set; } // The list of errors found during lexing
 
         public Lexer(string source)
         {
@@ -21,6 +22,7 @@ namespace G__Interpreter
             Tokens = new List<Token>();
             StartofLexeme = 0;
             CurrentPosition = 0;
+            Errors = new List<Error>();
         }
 
         /// <summary>
@@ -64,13 +66,16 @@ namespace G__Interpreter
                 case '/': AddToken(TokenType.DIVISION); break;
                 case '%': AddToken(TokenType.MODULO); break;
                 case '^': AddToken(TokenType.POWER); break;
-                case '@': AddToken(TokenType.CONCAT); break;
                 case '&': AddToken(TokenType.AND); break;
                 case '|': AddToken(TokenType.OR); break;
                 case '!': AddToken(Match('=') ? TokenType.NOT_EQUAL : TokenType.NOT); break;
                 case '<': AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
                 case '>': AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
                 case '=': AddToken(Match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
+                case '.':
+                    if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
+                    else throw new Error(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'.");
+                    break;
                 //scan strings
                 case '\"': ScanString(); break;
                 //scan numbers, identifiers and keywords
@@ -78,14 +83,13 @@ namespace G__Interpreter
                     if (char.IsDigit(c))
                     {
                         ScanNumber();
-                        break;
                     }
-                    if (char.IsLetter(c) || c == '_')
+                    else if (char.IsLetter(c) || c == '_')
                     {
                         ScanIdentifier();
-                        break;
                     }
-                    throw new Error(ErrorType.LEXICAL, $"Character '{c}' is not supported.");
+                    else throw new Error(ErrorType.LEXICAL, $"Character '{c}' is not supported.");
+                    break;
             }
         }
         /// <summary>
@@ -93,18 +97,29 @@ namespace G__Interpreter
         /// </summary>
         private void ScanNumber()
         {
-            int dotCounter = 0;
-            bool isvalidnumber = true;
-            while (char.IsLetterOrDigit(Peek()) || Peek() == '.')
+            //bool for checking if the number is invalid, if contains letters
+            bool isinvalidnumber = false;
+            while (char.IsLetterOrDigit(Peek()))
             {
-                if (Peek() == '.') dotCounter++;
-                if (char.IsLetter(Peek())) isvalidnumber = false;
+                if (char.IsLetter(Peek())) isinvalidnumber = true;
                 Advance();
             }
-            if (dotCounter > 1 || !isvalidnumber)
-                throw new Error(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'");
-            else 
-                AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
+
+            if (Peek() == '.' && char.IsLetterOrDigit(PeekAhead(1)))
+            {
+                //consume the '.'
+                Advance();
+
+                while (char.IsLetterOrDigit(Peek()))
+                {
+                    if (char.IsLetter(Peek())) isinvalidnumber = true;
+                    Advance();
+                }
+            }
+            if (isinvalidnumber)
+                throw new Error(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'.");
+            else
+            AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
         }
         /// <summary>
         ///  Scans an identifier token.
@@ -123,11 +138,18 @@ namespace G__Interpreter
                 case "if": AddToken(TokenType.IF, lexeme); break;
                 case "then": AddToken(TokenType.THEN, lexeme); break;
                 case "else": AddToken(TokenType.ELSE, lexeme); break;
+                case "import": AddToken(TokenType.IMPORT, lexeme); break;
+                case "draw": AddToken(TokenType.DRAW, lexeme); break;
+                case "color": AddToken(TokenType.COLOR, lexeme); break;
+                case "restore": AddToken(TokenType.RESTORE, lexeme); break;
                 case "point": AddToken(TokenType.POINT, lexeme); break;
                 case "line": AddToken(TokenType.LINE, lexeme); break;
                 case "segment": AddToken(TokenType.SEGMENT, lexeme); break;
                 case "ray": AddToken(TokenType.RAY, lexeme); break;
                 case "circle": AddToken(TokenType.CIRCLE, lexeme); break;
+                case "arc": AddToken(TokenType.ARC, lexeme); break;
+                case "measure": AddToken(TokenType.MEASURE, lexeme); break;
+                case "undefined": AddToken(TokenType.UNDEFINED, lexeme); break;
                 case "sequence": AddToken(TokenType.SEQUENCE, lexeme); break;
                 case "true":
                 case "false":
@@ -192,6 +214,16 @@ namespace G__Interpreter
             if (IsAtEnd())
                 return '\0';
             return Source[CurrentPosition];
+        }
+        /// <summary>
+        /// Returns the character at the specified position without advancing to the next character.
+        /// </summary>
+        /// <returns>The character at specified position.</returns>
+        private char PeekAhead(int position)
+        {
+            if (position >= Source.Length)
+                return '\0';
+            return Source[CurrentPosition + position];
         }
 
         /// <summary>

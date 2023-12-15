@@ -34,5 +34,88 @@ namespace G__Interpreter
         {
             DeclaredFunctions[function.Identifier] = function;
         }
+        public static void AddGlobalVariable(string identifier, object value)
+        {
+            GlobalVariables[identifier] = value;
+        }
+        public static object GetGlobalVariable(string identifier)
+        {
+            return GlobalVariables[identifier];
+        }
+        public static object Sqrt(List<object> arguments)
+        {
+            if (arguments.Count != 1)
+            {
+                throw new Error(ErrorType.SEMANTIC, "The sqrt function expects exactly one argument.");
+            }
+            if (arguments[0] is double)
+            {
+                return Math.Sqrt((double)arguments[0]);
+            }
+            else
+            {
+                throw new Error(ErrorType.SEMANTIC, "The sqrt function expects a numeric argument.");
+            }
+        }
+        public static object Sin(List<object> arguments)
+        {
+            if (arguments.Count != 1)
+            {
+                throw new Error(ErrorType.SEMANTIC, "The sin function expects exactly one argument.");
+            }
+            if (arguments[0] is double)
+            {
+                return Math.Sin((double)arguments[0]);
+            }
+            else
+            {
+                throw new Error(ErrorType.SEMANTIC, "The sin function expects a numeric argument.");
+            }
+        }
+        public static object Cos(List<object> arguments)
+        {
+            if (arguments.Count != 1)
+            {
+                throw new Error(ErrorType.SEMANTIC, "The cos function expects exactly one argument.");
+            }
+            if (arguments[0] is double)
+            {
+                return Math.Cos((double)arguments[0]);
+            }
+            else
+            {
+                throw new Error(ErrorType.SEMANTIC, "The cos function expects a numeric argument.");
+            }
+        }
+        public static object Log(List<object> arguments)
+        {
+            if (arguments.Count != 1)
+            {
+                throw new Error(ErrorType.SEMANTIC, "The log function expects exactly one argument.");
+            }
+            if (arguments[0] is double)
+            {
+                return Math.Log((double)arguments[0]);
+            }
+            else
+            {
+                throw new Error(ErrorType.SEMANTIC, "The log function expects a numeric argument.");
+            }
+        }
+        public static object Exp(List<object> arguments)
+        {
+            if (arguments.Count != 1)
+            {
+                throw new Error(ErrorType.SEMANTIC, "The exp function expects exactly one argument.");
+            }
+            if (arguments[0] is double)
+            {
+                return Math.Exp((double)arguments[0]);
+            }
+            else
+            {
+                throw new Error(ErrorType.SEMANTIC, "The exp function expects a numeric argument.");
+            }
+        }
     }
 }

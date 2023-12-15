@@ -17,12 +17,10 @@ namespace G__Interpreter
         IF,             // Represents the "if" keyword
         THEN,           // Represents the "then" keyword
         ELSE,           // Represents the "else" keyword
-        POINT,          // Represents the "point" keyword
-        LINE,           // Represents the "line" keyword
-        SEGMENT,        // Represents the "segment" keyword
-        RAY,            // Represents the "ray" keyword
-        CIRCLE,         // Represents the "circle" keyword
-        SEQUENCE,       // Represents the "sequence" keyword
+        IMPORT,         // Represents the "import" keyword
+        DRAW,           // Represents the "draw" keyword
+        COLOR,          // Represents the "color" keyword
+        RESTORE,        // Represents the "restore" keyword
 
         // Constants
         PI,             // Represents the "pi" constant
@@ -32,6 +30,17 @@ namespace G__Interpreter
         NUMBER,         // Represents a numeric value
         STRING,         // Represents a string value
         BOOLEAN,        // Represents a boolean value
+        SEQUENCE,       // Represents a sequence of values
+        UNDEFINED,      // Represents an undefined value
+
+        // Geometry
+        MEASURE,        // Represents a measure
+        POINT,          // Represents a point
+        LINE,           // Represents a line
+        SEGMENT,        // Represents a segment
+        RAY,            // Represents a ray
+        CIRCLE,         // Represents a circle
+        ARC,            // Represents an arc
 
         // Identifiers
         IDENTIFIER,     // Represents an identifier (variable name)
@@ -44,6 +53,7 @@ namespace G__Interpreter
         RIGHT_BRACE,    // Represents the right brace "}"
         SEMICOLON,      // Represents a semicolon ";"
         COMMA,          // Represents a comma ","
+        DOTS,           // Represents 3 dots "..."
 
         // Arithmetic Operators
         ADDITION,       // Represents the addition operator "+"
@@ -59,13 +69,12 @@ namespace G__Interpreter
         NOT,            // Represents the logical NOT operator "!"
 
         // Comparison Operators
-        EQUAL,       // Represents the equality operator "=="
-        NOT_EQUAL,     // Represents the inequality operator "!="
+        EQUAL,          // Represents the equality operator "=="
+        NOT_EQUAL,      // Represents the inequality operator "!="
         GREATER,        // Represents the greater than operator ">"
         LESS,           // Represents the less than operator "<"
         GREATER_EQUAL,  // Represents the greater than or equal to operator ">="
         LESS_EQUAL,     // Represents the less than or equal to operator "<="
-        CONCAT,         // Represents the string concatenation operator "@"
 
 
         // End of File
