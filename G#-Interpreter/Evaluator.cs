@@ -239,16 +239,19 @@ namespace G__Interpreter
         /// <returns>The result of the evaluated function.</returns>
         public object EvaluateFunction(FunctionCall call)
         {
-            // Check if the function was declared
-            if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
-                throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' wasn't declared.");
-
             // Evaluate the arguments
             List<object> args = new List<object>();
             foreach (Expression arg in call.Arguments)
-            {
                 args.Add(Evaluate(arg));
-            }
+
+            // Check if the call is to a predefined function
+            if (StandardLibrary.PredefinedFunctions.ContainsKey(call.Identifier))
+                return StandardLibrary.PredefinedFunctions[call.Identifier](args);
+
+            // Check if the function called is declared
+            if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
+                throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' wasn't declared.");
+
             switch (call.Identifier)
             {
                 case "print":

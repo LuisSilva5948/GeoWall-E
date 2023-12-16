@@ -11,22 +11,27 @@ namespace G__Interpreter
     /// </summary>
     public static class StandardLibrary
     {
-        public static Dictionary<string, FunctionDeclaration> DeclaredFunctions { get; private set; }   // The dictionary of declared functions
-        public static Dictionary<string, object> GlobalVariables { get; private set; }                  // The dictionary of global variables
         /// <summary>
-        /// Initializes a dictionary of declared functions and adds the predefined functions to it.
+        /// Random number generator.
         /// </summary>
-        public static void Initialize()
+        public static Random Random { get; } = new Random();
+        public static Dictionary<string, Func<List<object>, object>> PredefinedFunctions { get; } = new Dictionary<string, Func<List<object>, object>>()
         {
-            DeclaredFunctions = new Dictionary<string, FunctionDeclaration>();
-            DeclaredFunctions["print"] = null;
-            DeclaredFunctions["sqrt"] = null;
-            DeclaredFunctions["sin"] = null;
-            DeclaredFunctions["cos"] = null;
-            DeclaredFunctions["log"] = null;
-            DeclaredFunctions["exp"] = null;
-            GlobalVariables = new Dictionary<string, object>();
-        }
+            { "sqrt", Sqrt },
+            { "sin", Sin },
+            { "cos", Cos },
+            { "log", Log },
+            { "exp", Exp }
+        };  
+        /// <summary>
+        /// The dictionary of declared functions during the execution of the program.
+        /// </summary>
+        public static Dictionary<string, FunctionDeclaration> DeclaredFunctions { get; private set; } = new Dictionary<string, FunctionDeclaration>();
+        /// <summary>
+        /// The dictionary of global variables.
+        /// </summary>
+        public static Dictionary<string, object> GlobalVariables { get; private set; } = new Dictionary<string, object>();
+        
         /// <summary>
         /// Adds a function declaration to the dictionary of declared functions.
         /// </summary>
@@ -46,87 +51,55 @@ namespace G__Interpreter
 
 
         #region Predefined Functions
-        public static double Sqrt(List<object> arguments)
+        public static object Sqrt(List<object> arguments)
         {
             if (arguments.Count != 1)
-            {
                 throw new Error(ErrorType.SEMANTIC, "The sqrt function expects exactly one argument.");
-            }
             if (arguments[0] is double)
-            {
                 return Math.Sqrt((double)arguments[0]);
-            }
             else
-            {
                 throw new Error(ErrorType.SEMANTIC, "The sqrt function expects a numeric argument.");
-            }
         }
-        public static double Sin(List<object> arguments)
+        public static object Sin(List<object> arguments)
         {
             if (arguments.Count != 1)
-            {
                 throw new Error(ErrorType.SEMANTIC, "The sin function expects exactly one argument.");
-            }
             if (arguments[0] is double)
-            {
                 return Math.Sin((double)arguments[0]);
-            }
             else
-            {
                 throw new Error(ErrorType.SEMANTIC, "The sin function expects a numeric argument.");
-            }
         }
-        public static double Cos(List<object> arguments)
+        public static object Cos(List<object> arguments)
         {
             if (arguments.Count != 1)
-            {
                 throw new Error(ErrorType.SEMANTIC, "The cos function expects exactly one argument.");
-            }
             if (arguments[0] is double)
-            {
                 return Math.Cos((double)arguments[0]);
-            }
             else
-            {
                 throw new Error(ErrorType.SEMANTIC, "The cos function expects a numeric argument.");
-            }
         }
-        public static double Log(List<object> arguments)
+        public static object Log(List<object> arguments)
         {
             if (arguments.Count != 2)
-            {
                 throw new Error(ErrorType.SEMANTIC, "The log function expects exactly one argument.");
-            }
             if (arguments[0] is double a && arguments[1] is double b)
             {
                 if (a > 0 && b > 0 && b != 1)
-                {
                     return Math.Log(a, b);
-                }
                 else
-                {
                     throw new Error(ErrorType.SEMANTIC, "The log function was called with invalid arguments.");
-                }
             }
             else
-            {
                 throw new Error(ErrorType.SEMANTIC, "The log function expects a numeric argument.");
-            }
         }
-        public static double Exp(List<object> arguments)
+        public static object Exp(List<object> arguments)
         {
             if (arguments.Count != 1)
-            {
                 throw new Error(ErrorType.SEMANTIC, "The exp function expects exactly one argument.");
-            }
             if (arguments[0] is double)
-            {
                 return Math.Exp((double)arguments[0]);
-            }
-            else
-            {
+            else 
                 throw new Error(ErrorType.SEMANTIC, "The exp function expects a numeric argument.");
-            }
         }
         #endregion
     }

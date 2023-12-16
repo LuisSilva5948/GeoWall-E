@@ -9,19 +9,13 @@ namespace G__Interpreter
     /// <summary>
     /// Represents an interpreter that processes and executes the source code.
     /// </summary>
-    public class Interpreter
+    public static class Interpreter
     {
-        public Interpreter()
-        {
-            // Initialize the StandardLibrary class
-            StandardLibrary.Initialize();
-        }
-
         /// <summary>
         /// Executes the interpreter by running the provided source code.
         /// </summary>
         /// <param name="source">The source code to run.</param>
-        public List<object> Run(string source)
+        public static List<object> Run(string source)
         {
             try
             {

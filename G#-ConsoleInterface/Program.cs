@@ -6,7 +6,6 @@ namespace G__ConsoleInterface
     {
         static void Main(string[] args)
         {
-            Interpreter interpreter = new Interpreter();
 
             Console.WriteLine("G# Interpreter Tester.");
             Console.WriteLine();
@@ -24,7 +23,7 @@ namespace G__ConsoleInterface
                 else
                 if (line != null && line != "")
                 {
-                    var results = interpreter.Run(line);
+                    var results = Interpreter.Run(line);
                     foreach (var result in results)
                     {
                         Console.WriteLine(result);

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace G__Interpreter
 {
-    public class GeometricExpression : Expression
+    public abstract class GeometricExpression : Expression
     {
     }
     public class MeasureExpression : GeometricExpression
@@ -77,6 +77,28 @@ namespace G__Interpreter
             Center = new PointExpression();
             Random random = new Random();
             Radius = new LiteralExpression(random.Next(0, 200));
+        }
+    }
+    public class ArcExpression : GeometricExpression
+    {
+        public PointExpression Center { get; }
+        public Expression Radius { get; }
+        public Expression StartAngle { get; }
+        public Expression EndAngle { get; }
+        public ArcExpression(PointExpression center, Expression radius, Expression startAngle, Expression endAngle)
+        {
+            Center = center;
+            Radius = radius;
+            StartAngle = startAngle;
+            EndAngle = endAngle;
+        }
+        public ArcExpression()
+        {
+            Center = new PointExpression();
+            Random random = new Random();
+            Radius = new LiteralExpression(random.Next(0, 200));
+            StartAngle = new LiteralExpression(random.Next(0, 360));
+            EndAngle = new LiteralExpression(random.Next(0, 360));
         }
     }
 }

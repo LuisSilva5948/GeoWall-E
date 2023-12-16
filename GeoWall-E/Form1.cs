@@ -13,8 +13,7 @@ namespace GeoWall_E
         private void button1_Click(object sender, EventArgs e)
         {
             string code = richTextBox1.Text;
-            Interpreter interpreter = new Interpreter();
-            List<object> results = interpreter.Run(code);
+            List<object> results = Interpreter.Run(code);
             foreach (object result in results)
             {
                 richTextBox2.Text += result.ToString() + "\n";
