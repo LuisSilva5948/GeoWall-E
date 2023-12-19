@@ -69,7 +69,7 @@ namespace G__Interpreter
         {
             // Check if the amount of calls exceeds the call limit
             if (Calls > CallLimit)
-                throw new Error(ErrorType.SEMANTIC, "Stack Overflow.");
+                throw new Error(ErrorType.COMPILING, "Stack Overflow.");
             Calls++;
 
             // Evaluate the expression
@@ -87,17 +87,17 @@ namespace G__Interpreter
                     return Evaluate(grouping.Expression);
                 case VariableExpression variable:
                     return EvaluateVariable(variable.ID);
-                case AssignExpression assign:
+                case Assignment assign:
                     return CurrentScope()[assign.ID] = Evaluate(assign.Value);
-                case IfElseStatement ifElse:
+                case Conditional ifElse:
                     return EvaluateIfElse(ifElse);
-                case LetInExpression letIn:
+                case LetExpression letIn:
                     return EvaluateLetIn(letIn);
-                case FunctionDeclaration function:
+                case Function function:
                     return $"Function '{function.Identifier}' was declared succesfully.";
-                case FunctionCall call:
+                case Call call:
                     return EvaluateFunction(call);
-                case GeometricExpression geometric:
+                case Geometric geometric:
                     return geometric;
                 default:
                     return null;
@@ -123,7 +123,7 @@ namespace G__Interpreter
                     {
                         if (left is string || right is string)
                             return left.ToString() + right.ToString();
-                        throw new Error(ErrorType.SEMANTIC, $"Operands must be Numbers or Strings in '{Operator.Lexeme}' operation.");
+                        throw new Error(ErrorType.COMPILING, $"Operands must be Numbers or Strings in '{Operator.Lexeme}' operation.");
                     }
                     return (double)left + (double)right;
 
@@ -138,7 +138,7 @@ namespace G__Interpreter
                     CheckNumbers(Operator, left, right);
                     if ((double)right != 0)
                         return (double)left / (double)right;
-                    throw new Error(ErrorType.SEMANTIC, "Division by zero is undefined.");
+                    throw new Error(ErrorType.COMPILING, "Division by zero is undefined.");
                 case TokenType.MODULO:
                     CheckNumbers(Operator, left, right);
                     return (double)left % (double)right;
@@ -201,14 +201,25 @@ namespace G__Interpreter
         /// <returns>The value of the variable.</returns>
         public object EvaluateVariable(string name)
         {
-            return CurrentScope().ContainsKey(name)? CurrentScope()[name] : throw new Error(ErrorType.SEMANTIC, $"Value of {name} wasn't declared.");
+            return CurrentScope().ContainsKey(name)? CurrentScope()[name] : throw new Error(ErrorType.COMPILING, $"Value of {name} wasn't declared.");
         }
         /// <summary>
         /// Evaluates a let-in expression by creating a new scope, declaring the variables and evaluating the body expression.
         /// </summary>
         /// <param name="letIn">The let-in expression to evaluate.</param>
         /// <returns>The result of the body expression.</returns>
-        public object EvaluateLetIn(LetInExpression letIn)
+        public object EvaluateLetIn(LetExpression letIn)
+        {
+            PushScope();
+            foreach (Expression instruction in letIn.Instructions)
+            {
+                Evaluate(instruction);
+            }
+            object result = Evaluate(letIn.Body);
+            PopScope();
+            return result;
+        }
+        /*public object EvaluateLetIn(LetInExpression letIn)
         {
             PushScope();
             foreach (AssignExpression assign in letIn.Assignments)
@@ -219,17 +230,17 @@ namespace G__Interpreter
             object result = Evaluate(letIn.Body);
             PopScope();
             return result;
-        }
+        }*/
         /// <summary>
         /// Evaluates an if-else statement by evaluating the condition and either the then branch or the else branch based on the result.
         /// </summary>
         /// <param name="ifElse">The if-else statement to be evaluated.</param>
         /// <returns>The evaluated value of the executed branch.</returns>
-        public object EvaluateIfElse(IfElseStatement ifElse)
+        public object EvaluateIfElse(Conditional ifElse)
         {
             object condition = Evaluate(ifElse.Condition);
             if (!IsBoolean(condition))
-                throw new Error(ErrorType.SEMANTIC, "Condition in 'If-Else' expression must be a boolean expression.");
+                throw new Error(ErrorType.COMPILING, "Condition in 'If-Else' expression must be a boolean expression.");
             return (bool)condition ? Evaluate(ifElse.ThenBranch) : Evaluate(ifElse.ElseBranch);
         }
         /// <summary>
@@ -237,7 +248,7 @@ namespace G__Interpreter
         /// </summary>
         /// <param name="call">The function call to evaluate.</param>
         /// <returns>The result of the evaluated function.</returns>
-        public object EvaluateFunction(FunctionCall call)
+        public object EvaluateFunction(Call call)
         {
             // Evaluate the arguments
             List<object> args = new List<object>();
@@ -250,30 +261,20 @@ namespace G__Interpreter
 
             // Check if the function called is declared
             if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
-                throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' wasn't declared.");
+                throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' wasn't declared.");
 
             switch (call.Identifier)
             {
                 case "print":
                     if (args.Count != 1)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
+                        throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
                     return args[0];
-                case "sin":
-                    return StandardLibrary.Sin(args);
-                case "cos":
-                    return StandardLibrary.Cos(args);
-                case "sqrt":
-                    return StandardLibrary.Sqrt(args);
-                case "log":
-                    return StandardLibrary.Log(args);
-                case "exp":
-                    return StandardLibrary.Exp(args);
                 default:
                     // Get the function declaration
-                    FunctionDeclaration function = StandardLibrary.DeclaredFunctions[call.Identifier];
+                    Function function = StandardLibrary.DeclaredFunctions[call.Identifier];
                     // Check the amount of arguments of the function vs the arguments passed
                     if (args.Count != function.Parameters.Count)
-                        throw new Error(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
+                        throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
                     PushScope();
                     // Add the evaluated arguments to the scope
                     for (int i = 0; i < function.Parameters.Count; i++)
@@ -299,7 +300,7 @@ namespace G__Interpreter
         public void CheckBoolean(Token Operator, object right)
         {
             if (IsBoolean(right)) return;
-            throw new Error(ErrorType.SEMANTIC, $"Operand must be Boolean in '{Operator.Lexeme}' operation.");
+            throw new Error(ErrorType.COMPILING, $"Operand must be Boolean in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operands are boolean values. Throws a semantic error if they are not.
@@ -310,7 +311,7 @@ namespace G__Interpreter
         public void CheckBooleans(Token Operator, object left, object right)
         {
             if (IsBoolean(left, right)) return;
-            throw new Error(ErrorType.SEMANTIC, $"Operands must be Boolean in '{Operator.Lexeme}' operation.");
+            throw new Error(ErrorType.COMPILING, $"Operands must be Boolean in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operand is a number. Throws a semantic error if it is not.
@@ -320,7 +321,7 @@ namespace G__Interpreter
         public void CheckNumber(Token Operator, object right)
         {
             if (IsNumber(right)) return;
-            throw new Error(ErrorType.SEMANTIC, $"Operand must be Number in '{Operator.Lexeme}' operation.");
+            throw new Error(ErrorType.COMPILING, $"Operand must be Number in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operands are numbers. Throws a semantic error if they are not.
@@ -331,7 +332,7 @@ namespace G__Interpreter
         public void CheckNumbers(Token Operator, object left, object right)
         {
             if (IsNumber(left, right)) return;
-            throw new Error(ErrorType.SEMANTIC, $"Operands must be Numbers in '{Operator.Lexeme}' operation.");
+            throw new Error(ErrorType.COMPILING, $"Operands must be Numbers in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the given operands are number values.

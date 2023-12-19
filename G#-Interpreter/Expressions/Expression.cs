@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,8 +12,8 @@ namespace G__Interpreter
     /// </summary>
     public abstract class Expression
     {
+        //public abstract DataType Type { get; }
     }
-
     /// <summary>
     /// Represents a binary expression composed of a left expression, an operator token, and a right expression.
     /// </summary>
@@ -72,28 +73,28 @@ namespace G__Interpreter
 
 
     /// <summary>
-    /// Represents a variable expression identified by a token.
+    /// Represents a variable expression identified by a string.
     /// </summary>
     public class VariableExpression : Expression
     {
         public string ID { get; }
 
-        public VariableExpression(Token id)
+        public VariableExpression(string id)
         {
-            ID = id.Lexeme;
+            ID = id;
         }
     }
 
     /// <summary>
     /// Represents an if-else statement with a condition expression, a then branch expression, and an optional else branch expression.
     /// </summary>
-    public class IfElseStatement : Expression
+    public class Conditional : Expression
     {
         public Expression Condition { get; }
         public Expression ThenBranch { get; }
         public Expression ElseBranch { get; }
 
-        public IfElseStatement(Expression condition, Expression thenBranch, Expression elseBranch)
+        public Conditional(Expression condition, Expression thenBranch, Expression elseBranch)
         {
             Condition = condition;
             ThenBranch = thenBranch;
@@ -102,9 +103,20 @@ namespace G__Interpreter
     }
 
     /// <summary>
-    /// Represents a let-in expression, where a set of assignments are made followed by a body expression.
+    /// Represents a let-in expression, where a set of instructions are executed before the body expression.
     /// </summary>
-    public class LetInExpression : Expression
+    public class LetExpression : Expression
+    {
+        public List<Expression> Instructions { get; }
+        public Expression Body { get; }
+
+        public LetExpression(List<Expression> instructions, Expression body)
+        {
+            Instructions = instructions;
+            Body = body;
+        }
+    }
+    /*public class LetInExpression : Expression
     {
         public List<AssignExpression> Assignments { get; }
         public Expression Body { get; }
@@ -114,33 +126,48 @@ namespace G__Interpreter
             Assignments = assignments;
             Body = body;
         }
-    }
+    }*/
 
     /// <summary>
-    /// Represents an assignment expression, where a value is assigned to a variable identified by a token.
+    /// Represents an assignment expression, where a value is assigned to a variable identified by a string.
     /// </summary>
-    public class AssignExpression : Expression
+    public class Assignment : Expression
     {
         public string ID { get; }
         public Expression Value { get; }
 
-        public AssignExpression(Token id, Expression value)
+        public Assignment(string id, Expression value)
         {
-            ID = id.Lexeme;
+            ID = id;
             Value = value;
+        }
+    }
+
+    /// <summary>
+    /// Represents a match-assignment expression, where elements of a sequence are assigned to a list of variables identified by a list of strings.
+    /// </summary>
+    public class MatchAssigment : Expression
+    {
+        public List<string> IDs { get; }
+        public Sequence Sequence { get; }
+
+        public MatchAssigment(List<string> ids, Sequence seq)
+        {
+            IDs = ids;
+            Sequence = seq;
         }
     }
 
     /// <summary>
     /// Represents a function declaration with an identifier, a list of argument variable expressions, and a body expression.
     /// </summary>
-    public class FunctionDeclaration : Expression
+    public class Function : Expression
     {
         public string Identifier { get; }
         public List<VariableExpression> Parameters { get; }
         public Expression Body { get; }
 
-        public FunctionDeclaration(string identifier, List<VariableExpression> parameters, Expression body)
+        public Function(string identifier, List<VariableExpression> parameters, Expression body)
         {
             Identifier = identifier;
             Parameters = parameters;
@@ -149,14 +176,14 @@ namespace G__Interpreter
     }
 
     /// <summary>
-    /// Represents a function call with an identifier and a list of argument expressions.
+    /// Represents a call to a function with an identifier and a list of argument expressions.
     /// </summary>
-    public class FunctionCall : Expression
+    public class Call : Expression
     {
         public string Identifier { get; }
         public List<Expression> Arguments { get; }
 
-        public FunctionCall(string identifier, List<Expression> arguments)
+        public Call(string identifier, List<Expression> arguments)
         {
             Identifier = identifier;
             Arguments = arguments;
@@ -165,8 +192,9 @@ namespace G__Interpreter
     /// <summary>
     /// Class that representes undefined or null expressions.
     /// </summary>
-    public class UndefinedExpression : Expression
+    public class Undefined : Expression
     {
-        public UndefinedExpression() { }
+        public Undefined() { }
     }
+
 }

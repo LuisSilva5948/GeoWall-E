@@ -9,7 +9,7 @@ namespace G__Interpreter
     /// <summary>
     /// Represents a G# color.
     /// </summary>
-    enum Color
+    public enum GSharpColor
     {
         RED,
         GREEN,

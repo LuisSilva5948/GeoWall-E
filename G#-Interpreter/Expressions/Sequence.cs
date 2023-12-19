@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace G__Interpreter
 {
-    public abstract class Sequence { }
+    public abstract class Sequence: Expression
+    {
+    }
 
     //three types of sequences: infinite, finite(range) and values(array)
     /*public class ValuesSequence : Sequence
@@ -22,7 +24,7 @@ namespace G__Interpreter
         }
 
     }*/
-    public class FiniteSequence : Expression
+    public class FiniteSequence : Sequence
     {
         public List<Expression> Elements { get; }
         public FiniteSequence(List<Expression> elements)
@@ -38,15 +40,35 @@ namespace G__Interpreter
                 Elements.RemoveAt(0);
                 return next;
             }
-            else return new UndefinedExpression();
+            else return new Undefined();
         }
     }
-    public class PointSequence : Sequence
+    public class FigureSequence : Sequence
     {
         public List<Expression> Elements { get; }
-        public PointSequence(List<Expression> elements)
+        public FigureSequence(List<Expression> elements)
         {
             Elements = elements;
+        }
+    }
+    public class InfiniteSequence : Sequence
+    {
+        public Expression Expression { get; }
+        public InfiniteSequence(Expression expression)
+        {
+            Expression = expression;
+        }
+    }
+    public class RangeSequence : Sequence
+    {
+        public Expression Start { get; }
+        public Expression End { get; }
+        public Expression Step { get; }
+        public RangeSequence(Expression start, Expression end, Expression step)
+        {
+            Start = start;
+            End = end;
+            Step = step;
         }
     }
 }

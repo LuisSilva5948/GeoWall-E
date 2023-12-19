@@ -79,7 +79,7 @@ namespace G__Interpreter
                     break;
                 case '.':
                     if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
-                    else throw new Error(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'.");
+                    else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.");
                     break;
                 //scan strings
                 case '\"': ScanString(); break;
@@ -93,7 +93,7 @@ namespace G__Interpreter
                     {
                         ScanIdentifier();
                     }
-                    else throw new Error(ErrorType.LEXICAL, $"Character '{c}' is not supported.");
+                    else throw new Error(ErrorType.COMPILING, $"Character '{c}' is not supported.");
                     break;
             }
         }
@@ -122,7 +122,7 @@ namespace G__Interpreter
                 }
             }
             if (isinvalidnumber)
-                throw new Error(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'.");
+                throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.");
             else
             AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
         }
@@ -175,7 +175,7 @@ namespace G__Interpreter
             {
                 if (IsAtEnd())
                 {
-                    throw new Error(ErrorType.LEXICAL, "Unfinished string.");
+                    throw new Error(ErrorType.COMPILING, "Unfinished string.");
                 }
                 Advance();
             }

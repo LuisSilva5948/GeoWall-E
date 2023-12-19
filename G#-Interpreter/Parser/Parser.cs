@@ -50,7 +50,7 @@ namespace G__Interpreter
                 if (e is Error error)
                     throw error;
                 else
-                throw new Error(ErrorType.SYNTAX, "Invalid Syntax.");
+                throw new Error(ErrorType.COMPILING, "Invalid Syntax.");
             }
         }
         /// <summary>
@@ -58,10 +58,10 @@ namespace G__Interpreter
         /// </summary>
         private Expression ParseInstruction()
         {
-            if (Peek().Type == TokenType.IDENTIFIER) {
-                if (PeekNext().Type == TokenType.COMMA)
+            if (Match(TokenType.IDENTIFIER)) {
+                if (Peek().Type == TokenType.COMMA)
                     return ParseMultipleAssignments();
-                if (PeekNext().Type == TokenType.ASSIGN)
+                if (Peek().Type == TokenType.ASSIGN)
                     return ParseAssignment();
             }
             if (Match(TokenType.COLOR))
@@ -224,11 +224,11 @@ namespace G__Interpreter
                 Token id = Previous();
                 if (Match(TokenType.LEFT_PAREN))
                     return FunctionCall(id.Lexeme);
-                if (Match(TokenType.ASSIGN))
-                    return new AssignExpression(id, ParseExpression());
-                return new VariableExpression(id);
+                return new VariableExpression(id.Lexeme);
             }
-            throw new Error(ErrorType.SYNTAX, $"Expected expression after '{Previous().Lexeme}'.");
+            if (Match(TokenType.POINT))
+                return FunctionCall("point");
+            throw new Error(ErrorType.COMPILING, $"Expected expression after '{Previous().Lexeme}'.");
         }
 
         /// <summary>
@@ -241,12 +241,26 @@ namespace G__Interpreter
             Expression thenBranch = ParseExpression();
             Consume(TokenType.ELSE, "Expected 'else' at 'if-else' expression.");
             Expression elseBranch = ParseExpression();
-            return new IfElseStatement(condition, thenBranch, elseBranch);
+            return new Conditional(condition, thenBranch, elseBranch);
         }
         /// <summary>
         /// Parses a let-in expression.
         /// </summary>
         public Expression ParseLet()
+        {
+            List<Expression> instructions = new List<Expression>();
+            do
+            {
+                Expression instruction = ParseInstruction();
+                Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
+                instructions.Add(instruction);
+            }
+            while (Peek().Type != TokenType.IN);
+            Consume(TokenType.IN, "Expected 'in' at 'let-in' expression.");
+            Expression body = ParseExpression();
+            return new LetExpression(instructions, body);
+        }
+        /*public Expression ParseLet()
         {
             // Parse variable assignments
             List<AssignExpression> assignments = new List<AssignExpression>();
@@ -261,7 +275,7 @@ namespace G__Interpreter
                 }
                 catch (Error)
                 {
-                    throw new Error(ErrorType.SYNTAX, $"Expected value of '{id.Lexeme}' after '='.");
+                    throw new Error(ErrorType.COMPILING, $"Expected value of '{id.Lexeme}' after '='.");
                 }
                 Consume(TokenType.SEMICOLON, $"Expected ';' after assignment of '{id}'.");
             }
@@ -270,7 +284,39 @@ namespace G__Interpreter
             Consume(TokenType.IN, "Expected 'in' at 'let-in' expression.");
             Expression body = ParseExpression();
             return new LetInExpression(assignments, body);
+        }*/
+
+        /// <summary>
+        /// Parses an assignment expression.
+        /// </summary>
+        private Expression ParseAssignment()
+        {
+            string id = Previous().Lexeme;
+            Consume(TokenType.ASSIGN, $"Expected '=' when initializing variable '{id}'.");
+            Expression value = ParseExpression();
+            return new Assignment(id, value);
         }
+        /// <summary>
+        /// Parses multiple assignments.
+        /// </summary>
+        private Expression ParseMultipleAssignments()
+        {
+            List<string> ids = new List<string>();
+            ids.Add(Previous().Lexeme);
+            do
+            {
+                Consume(TokenType.COMMA, $"Expected ',' after variable '{Previous().Lexeme}'.");
+                Token id = Consume(TokenType.IDENTIFIER, "Expected a variable name in a 'match' expressiona after comma.");
+                ids.Add(id.Lexeme);
+            }
+            while (Peek().Type == TokenType.COMMA);
+            Consume(TokenType.ASSIGN, $"Expected '=' when initializing variables in 'match' expression.");
+            Expression seq = ParseExpression();
+            if (seq is not Sequence)
+                throw new Error(ErrorType.COMPILING, $"Expected sequence after '=' in 'match' expression.");
+            return new MatchAssigment(ids, (Sequence)seq);
+        }
+
         /// <summary>
         /// Parses a function call or declaration.
         /// </summary>
@@ -291,7 +337,7 @@ namespace G__Interpreter
             // Check if function is being declared or called
             if (Match(TokenType.ASSIGN))
                 return FunctionDeclaration(id, arguments);
-            return new FunctionCall(id, arguments);
+            return new Call(id, arguments);
         }
         /// <summary>
         /// Parses a function declaration.
@@ -302,7 +348,7 @@ namespace G__Interpreter
             IsFunctionDeclaration = true;
             // Check if function already exists
             if (StandardLibrary.DeclaredFunctions.ContainsKey(id))
-                throw new Error(ErrorType.SYNTAX, $"Function '{id}' already exists and can't be redefined.");
+                throw new Error(ErrorType.COMPILING, $"Function '{id}' already exists and can't be redefined.");
             // Add function to declared functions temporarily
             StandardLibrary.DeclaredFunctions[id] = null;
             List<VariableExpression> parameters = new List<VariableExpression>();
@@ -310,17 +356,17 @@ namespace G__Interpreter
             foreach (Expression argument in arguments)
             {
                 if (argument is not VariableExpression parameter)
-                    throw new Error(ErrorType.SYNTAX, "Expected valid variable name as parameter in function declaration.");
+                    throw new Error(ErrorType.COMPILING, "Expected valid variable name as parameter in function declaration.");
                 if (parameters.Contains(parameter))
                 {
-                    throw new Error(ErrorType.SYNTAX, $"Parameter name '{parameter.ID}' cannot be used more than once.");
+                    throw new Error(ErrorType.COMPILING, $"Parameter name '{parameter.ID}' cannot be used more than once.");
                 }
                 parameters.Add(parameter);
             }
             try
             {
                 Expression body = ParseExpression();
-                FunctionDeclaration function = new FunctionDeclaration(id, parameters, body);
+                Function function = new Function(id, parameters, body);
                 // Add function to declared functions permanently
                 StandardLibrary.AddFunction(function);
                 return function;
@@ -329,7 +375,7 @@ namespace G__Interpreter
             {
                 // Remove invalid function from declared functions
                 StandardLibrary.DeclaredFunctions.Remove(id);
-                throw new Error(ErrorType.SYNTAX, $"Invalid declaration of function '{id}'.");
+                throw new Error(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.");
             }
         }
         private Expression ParseSequence()
@@ -393,15 +439,7 @@ namespace G__Interpreter
             throw new NotImplementedException();
         }
 
-        private Expression ParseAssignment()
-        {
-            throw new NotImplementedException();
-        }
-
-        private Expression ParseMultipleAssignments()
-        {
-            throw new NotImplementedException();
-        }
+        
 
 
 
@@ -490,7 +528,7 @@ namespace G__Interpreter
             if (Check(type))
                 return Advance();
 
-            throw new Error(ErrorType.SYNTAX, message);
+            throw new Error(ErrorType.COMPILING, message);
         }
         #endregion
     }
