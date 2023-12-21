@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -89,12 +90,45 @@ namespace G__Interpreter
         {
             return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
+        /// <summary>
+        /// Random measure generator.
+        /// </summary>
+        public static Geometric.Measure RandomMeasure()
+        {
+            int limit = Math.Min(Interpreter.UI.CanvasWidth, Interpreter.UI.CanvasHeight)/2;
+            return new Geometric.Measure(Random.Next(0, limit));
+        }
+
 
         #endregion
 
+        #region Predefined G# Functions
+
+        /// <summary>
+        /// Counts the number of elements in a sequence.
+        /// </summary>
+        public static object Count(Sequence seq)
+        {
+            if (seq is FiniteSequence)
+                return ((FiniteSequence)seq).Count;
+            if (seq is RangeSequence)
+            {
+                return ((RangeSequence)seq).Count;
+            }
+            return new Undefined();
+        }
+        /// <summary>
+        /// Returns the measure between two points.
+        /// </summary>
+        public static Geometric.Measure Measure(Figure.Point p1, Figure.Point p2)
+        {
+            return new Geometric.Measure(Distance(p1, p2));
+        }
 
 
-        #region Predefined Functions
+        #endregion
+
+        #region Predefined Math Functions
         /// <summary>
         /// Square root function.
         /// </summary>
@@ -160,6 +194,7 @@ namespace G__Interpreter
             else 
                 throw new Error(ErrorType.COMPILING, "The exp function expects a numeric argument.");
         }
+
         #endregion
     }
 }

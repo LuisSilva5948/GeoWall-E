@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,21 +10,9 @@ namespace G__Interpreter
     public abstract class Sequence: Expression
     {
     }
-
-    //three types of sequences: infinite, finite(range) and values(array)
-    /*public class ValuesSequence : Sequence
-    {
-        public List<Expression> Values { get; private set; }
-        public TypeSequence SequenceType = TypeSequence.Values;
-        public override TypeSequence GetSequenceType => SequenceType;
-
-        public ValuesSecquence(List<Expression> secquenceValues)
-        {
-            this.secquenceValues = secquenceValues;
-            expressionLine = Parser.GetLine;
-        }
-
-    }*/
+    /// <summary>
+    /// Represents a finite sequence of expressions of the same type.
+    /// </summary>
     public class FiniteSequence : Sequence
     {
         public List<Expression> Elements { get; }
@@ -43,32 +32,36 @@ namespace G__Interpreter
             else return new Undefined();
         }
     }
-    public class FigureSequence : Sequence
-    {
-        public List<Expression> Elements { get; }
-        public FigureSequence(List<Expression> elements)
-        {
-            Elements = elements;
-        }
-    }
+    /// <summary>
+    /// Represents an infinite sequence of expressions of integers.
+    /// </summary>
     public class InfiniteSequence : Sequence
     {
-        public Expression Expression { get; }
-        public InfiniteSequence(Expression expression)
+        public double Start { get; }
+        public InfiniteSequence(double start)
         {
-            Expression = expression;
+            Start = start;
         }
     }
+    /// <summary>
+    /// Represents a sequence of integers in a range.
+    /// </summary>
     public class RangeSequence : Sequence
     {
-        public Expression Start { get; }
-        public Expression End { get; }
-        public Expression Step { get; }
-        public RangeSequence(Expression start, Expression end, Expression step)
+        public double Start { get; }
+        public double End { get; }
+        public int Count
+        {
+            get
+            {
+                if (Start - End >= 0) return (int)Start - (int)End + 1;
+                else return 0;
+            }
+        }
+        public RangeSequence(double start, double end)
         {
             Start = start;
             End = end;
-            Step = step;
         }
     }
 }

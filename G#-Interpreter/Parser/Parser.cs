@@ -20,6 +20,7 @@ namespace G__Interpreter
         private readonly List<Token> Tokens;    // The list of tokens produced by the lexer
         private int CurrentPosition;            // The current position in the token list
         private bool IsFunctionDeclaration;     // True if the parser is parsing a function declaration (used for error handling)
+        
 
         public Parser(List<Token> tokens)
         {
@@ -72,20 +73,10 @@ namespace G__Interpreter
                 return ParseRestore();
             if (Match(TokenType.IMPORT))
                 return ParseImport();
-            if (Match(TokenType.POINT))
-                return ParsePoint();
-            if (Match(TokenType.LINE))
-                return ParseLine();
-            if (Match(TokenType.SEGMENT))
-                return ParseSegment();
-            if (Match(TokenType.RAY))
-                return ParseRay();
-            if (Match(TokenType.CIRCLE))
-                return ParseCircle();
-            if (Match(TokenType.ARC))
-                return ParseArc();
-            if (Match(TokenType.MEASURE))
-                return ParseMeasure();
+
+            if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
+                return ParseFigure();
+
             if (Match(TokenType.IF))
                 return ParseIf();
             if (Match(TokenType.LET))
@@ -93,13 +84,16 @@ namespace G__Interpreter
 
             return ParseExpression();
         }
-
+        /// <summary>
+        /// Parses an expression.
+        /// </summary>
         private Expression ParseExpression()
         {
             if (Match(TokenType.IF))
                 return ParseIf();
             if (Match(TokenType.LET))
                 return ParseLet();
+
             return ParseLogical();
         }
 
@@ -336,7 +330,14 @@ namespace G__Interpreter
             Consume(TokenType.RIGHT_PAREN, $"Expected ')' after '{id}' arguments.");
             // Check if function is being declared or called
             if (Match(TokenType.ASSIGN))
+            {
+                foreach (Expression argument in arguments)
+                {
+                    if (argument is not VariableExpression parameter)
+                        throw new Error(ErrorType.COMPILING, "Expected valid variable names as parameters in function declaration.");
+                }
                 return FunctionDeclaration(id, arguments);
+            }
             return new Call(id, arguments);
         }
         /// <summary>
@@ -378,65 +379,116 @@ namespace G__Interpreter
                 throw new Error(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.");
             }
         }
+        /// <summary>
+        /// Parses a sequence expression that can be finite, infinite, or range.
+        /// </summary>
         private Expression ParseSequence()
         {
-            throw new NotImplementedException();
-            if (Match(TokenType.RIGHT_BRACE)) return ParseExpression();
+            // Parse infinite and range sequences
+            if (Peek().Type == TokenType.NUMBER && PeekNext().Type == TokenType.DOTS)
+            {
+                Expression sequence;
+                double start = (double)Previous().Literal;
+                Consume(TokenType.DOTS, "Expected '...' after number.");
+                if (Match(TokenType.NUMBER))
+                {
+                    double end = (double)Previous().Literal;
+                    sequence = new RangeSequence(start, end);
+                }
+                else
+                {
+                    sequence = new InfiniteSequence(start);
+                }
+                Consume(TokenType.RIGHT_BRACE, $"Expected '}}' in sequence after {Previous().Lexeme}.");
+                return sequence;
+            }
+            // Parse finite sequences
+            List<Expression> elements = new List<Expression>();
+            if (!Check(TokenType.RIGHT_BRACE))
+            {
+                do
+                {
+                    Expression element = ParseExpression();
+                    elements.Add(element);
+                }
+                while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_BRACE, $"Expected '}}' in sequence after {Previous().Lexeme}.");
+            return new FiniteSequence(elements);
         }
-
-        private Expression ParseMeasure()
+        /// <summary>
+        /// Parses a random figure expression or a random sequence of figures of the same kind.
+        /// </summary>
+        /// <returns> An assignment to a constant of a call to a random figure function or to a random sequence of figures function.</returns>
+        private Expression ParseFigure()
         {
-            throw new NotImplementedException();
+            string functionid = "random";
+            functionid += Previous().Lexeme.ToLower();
+            if (Match(TokenType.SEQUENCE))
+            {
+                functionid += "sequence";
+            }
+            string id = Consume(TokenType.IDENTIFIER, $"Expected identifier after '{Previous().Lexeme}'.").Lexeme;
+            return new Assignment(id ,new Call(functionid, new List<Expression>()));
         }
-
-        private Expression ParseArc()
-        {
-            throw new NotImplementedException();
-        }
-
-        private Expression ParseCircle()
-        {
-            throw new NotImplementedException();
-        }
-
-        private Expression ParseRay()
-        {
-            throw new NotImplementedException();
-        }
-
-        private Expression ParseSegment()
-        {
-            throw new NotImplementedException();
-        }
-
-        private Expression ParseLine()
-        {
-            throw new NotImplementedException();
-        }
-
-        private Expression ParsePoint()
-        {
-            throw new NotImplementedException();
-        }
-
+        /// <summary>
+        /// Parses an import expression that adds code from another file.
+        /// </summary>
         private Expression ParseImport()
         {
-            throw new NotImplementedException();
+            string id = Consume(TokenType.IDENTIFIER, "Expected an identifier after 'import'.").Lexeme;
+            return new Import(id);
         }
-
+        /// <summary>
+        /// Parses a restore expression that restores the color to the previous one.
+        /// </summary>
         private Expression ParseRestore()
         {
-            throw new NotImplementedException();
+            return new RestoreStatement();
         }
-
+        /// <summary>
+        /// Parses a draw expression with or without a string label.
+        /// </summary>
         private Expression ParseDraw()
         {
-            throw new NotImplementedException();
+            Expression drawing = ParseExpression();
+            if (drawing is not Geometric)
+                throw new Error(ErrorType.COMPILING, "Expected geometric expression after 'draw'.");
+            if (Match(TokenType.STRING))
+            {
+                return new DrawStatement((Geometric)drawing, Previous().Lexeme);
+            }
+            return new DrawStatement((Geometric)drawing);
         }
-
+        /// <summary>
+        /// Parses a color expression.
+        /// </summary>
         private Expression ParseColor()
         {
-            throw new NotImplementedException();
+            string color = Consume(TokenType.STRING, "Expected a color string after 'color'.").Lexeme;
+            switch (color.ToLower())
+            {
+                case "red":
+                    return new ColorStatement(GSharpColor.RED);
+                case "green":
+                    return new ColorStatement(GSharpColor.GREEN);
+                case "blue":
+                    return new ColorStatement(GSharpColor.BLUE);
+                case "yellow":
+                    return new ColorStatement(GSharpColor.YELLOW);
+                case "cyan":
+                    return new ColorStatement(GSharpColor.CYAN);
+                case "magenta":
+                    return new ColorStatement(GSharpColor.MAGENTA);
+                case "black":
+                    return new ColorStatement(GSharpColor.BLACK);
+                case "white":
+                    return new ColorStatement(GSharpColor.WHITE);
+                case "gray":
+                    return new ColorStatement(GSharpColor.GRAY);
+                default:
+                    throw new Error(ErrorType.COMPILING, $"Invalid color '{color}'.");
+            }
         }
 
         

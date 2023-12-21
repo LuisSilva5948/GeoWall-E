@@ -197,4 +197,50 @@ namespace G__Interpreter
         public Undefined() { }
     }
 
+    /// <summary>
+    /// Represents an import statement with a path string.
+    /// </summary>
+    public class Import : Expression
+    {
+        public string Path { get; }
+        public Import(string path)
+        {
+            Path = path;
+        }
+    }
+    /// <summary>
+    /// Represents a draw statement with a figure (as expression) to draw.
+    /// </summary>
+    public class DrawStatement : Expression
+    {
+        public Expression Expression { get; }
+        public string? Label { get; set; }
+        public DrawStatement(Expression expression)
+        {
+            Expression = expression;
+        }
+        public DrawStatement(Expression expression, string label)
+        {
+            Expression = expression;
+            Label = label;
+        }
+    }
+    /// <summary>
+    /// Represents a color statement with a color to set.
+    /// </summary>
+    public class ColorStatement : Expression
+    {
+        public GSharpColor Color { get; }
+        public ColorStatement(GSharpColor color)
+        {
+            Color = color;
+        }
+    }
+    /// <summary>
+    /// Represents a restore statement that restores the default color.
+    /// </summary>
+    public class RestoreStatement : Expression
+    {
+        public RestoreStatement() { }
+    }
 }

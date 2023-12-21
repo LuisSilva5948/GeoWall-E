@@ -6,7 +6,14 @@ using System.Threading.Tasks;
 
 namespace G__Interpreter
 {
-    internal interface IDrawable
+    public enum DataType
     {
+        NUMBER,
+        STRING,
+        BOOLEAN,
+        FIGURE,
+        GEOMETRIC,
+        COLOR,
+        VOID
     }
 }
