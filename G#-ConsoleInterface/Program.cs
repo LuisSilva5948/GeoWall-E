@@ -1,4 +1,4 @@
-﻿using G__Interpreter;
+﻿using GSharpInterpreter;
 
 namespace G__ConsoleInterface
 {

@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace G__Interpreter
+namespace GSharpInterpreter
 {
-    public abstract class Figure
+    public abstract class GSharpFigure
     {
-        public class Point : Figure
+        public class Point : GSharpFigure
         {
             public double X { get; }
             public double Y { get; }
@@ -21,7 +21,7 @@ namespace G__Interpreter
             }
 
         }
-        public class Line : Figure
+        public class Line : GSharpFigure
         {
             public Point P1 { get; }
             public Point P2 { get; }
@@ -38,7 +38,7 @@ namespace G__Interpreter
                 }
             }
         }
-        public class Segment : Figure
+        public class Segment : GSharpFigure
         {
             public Point P1 { get; }
             public Point P2 { get; }
@@ -55,7 +55,7 @@ namespace G__Interpreter
                 }
             }
         }
-        public class Ray : Figure
+        public class Ray : GSharpFigure
         {
             public Point P1 { get; }
             public Point P2 { get; }
@@ -72,7 +72,7 @@ namespace G__Interpreter
                 }
             }
         }
-        public class Circle : Figure
+        public class Circle : GSharpFigure
         {
             public Point Center { get; }
             public double Radius { get; }
@@ -82,18 +82,18 @@ namespace G__Interpreter
                 Radius = radius;
             }
         }
-        public class Arc : Figure
+        public class Arc : GSharpFigure
         {
             public Point Center { get; }
             public double Radius { get; }
-            public double StartAngle { get; }
-            public double EndAngle { get; }
-            public Arc(Point center, double radius, double startAngle, double endAngle)
+            public Point InitialRayPoint { get; }
+            public Point FinalRayPoint { get; }
+            public Arc(Point center, double radius, Point initialRayPoint, Point finalRayPoint)
             {
                 Center = center;
                 Radius = radius;
-                StartAngle = startAngle;
-                EndAngle = endAngle;
+                InitialRayPoint = initialRayPoint;
+                FinalRayPoint = finalRayPoint;
             }
         }
     }

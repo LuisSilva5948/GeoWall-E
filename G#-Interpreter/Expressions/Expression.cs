@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace G__Interpreter
+namespace GSharpInterpreter
 {
     /// <summary>
     /// Base class for all types of expressions.

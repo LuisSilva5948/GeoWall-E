@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\G#-Interpreter\G#-Interpreter.csproj" />
+    <ProjectReference Include="..\G#-Interpreter\GSharp-Interpreter.csproj" />
   </ItemGroup>
 
 </Project>

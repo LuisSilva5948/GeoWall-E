@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace G__Interpreter
+namespace GSharpInterpreter
 {
     /// <summary>
     /// Represents the standard library of the G# language.
@@ -86,7 +86,7 @@ namespace G__Interpreter
         /// Distance between two points.
         /// </summary>
         /// <returns> Returns the distance between two points.</returns>
-        public static double Distance(Figure.Point p1, Figure.Point p2)
+        public static double Distance(GSharpFigure.Point p1, GSharpFigure.Point p2)
         {
             return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
@@ -120,7 +120,7 @@ namespace G__Interpreter
         /// <summary>
         /// Returns the measure between two points.
         /// </summary>
-        public static Geometric.Measure Measure(Figure.Point p1, Figure.Point p2)
+        public static Geometric.Measure Measure(GSharpFigure.Point p1, GSharpFigure.Point p2)
         {
             return new Geometric.Measure(Distance(p1, p2));
         }

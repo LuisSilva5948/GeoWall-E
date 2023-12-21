@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace G__Interpreter
+namespace GSharpInterpreter
 {
     /// <summary>
     /// Represents an interpreter that processes and executes the source code.

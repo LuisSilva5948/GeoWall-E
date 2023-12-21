@@ -3,7 +3,7 @@ using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
-namespace G__Interpreter
+namespace GSharpInterpreter
 {
     /// <summary>
     /// Represents a lexer for tokenizing source code.
