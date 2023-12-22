@@ -12,7 +12,6 @@ namespace GSharpInterpreter
     /// </summary>
     public abstract class Expression
     {
-        //public abstract DataType Type { get; }
     }
     /// <summary>
     /// Represents a binary expression composed of a left expression, an operator token, and a right expression.
@@ -200,10 +199,10 @@ namespace GSharpInterpreter
     /// <summary>
     /// Represents an import statement with a path string.
     /// </summary>
-    public class Import : Expression
+    public class ImportStatement : Expression
     {
         public string Path { get; }
-        public Import(string path)
+        public ImportStatement(string path)
         {
             Path = path;
         }
@@ -214,15 +213,22 @@ namespace GSharpInterpreter
     public class DrawStatement : Expression
     {
         public Expression Expression { get; }
-        public string? Label { get; set; }
-        public DrawStatement(Expression expression)
-        {
-            Expression = expression;
-        }
+        public string Label { get; set; }
         public DrawStatement(Expression expression, string label)
         {
             Expression = expression;
             Label = label;
+        }
+    }
+    /// <summary>
+    /// Represents a print statement with an expression to print.
+    /// </summary>
+    public class PrintStatement : Expression
+    {
+        public Expression Expression { get; }
+        public PrintStatement(Expression expression)
+        {
+            Expression = expression;
         }
     }
     /// <summary>
@@ -242,5 +248,17 @@ namespace GSharpInterpreter
     public class RestoreStatement : Expression
     {
         public RestoreStatement() { }
+    }
+    public class RandomDeclaration : Expression
+    {
+        public string Name { get; }
+        public string Type { get; }
+        public bool IsSequence { get; }
+        public RandomDeclaration(string name, string type, bool isSequence)
+        {
+            Name = name;
+            Type = type;
+            IsSequence = isSequence;
+        }
     }
 }

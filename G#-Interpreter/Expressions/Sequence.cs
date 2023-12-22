@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace GSharpInterpreter
 {
@@ -37,10 +38,14 @@ namespace GSharpInterpreter
     /// </summary>
     public class InfiniteSequence : Sequence
     {
-        public double Start { get; }
+        public double Start { get; private set; }
         public InfiniteSequence(double start)
         {
             Start = start;
+        }
+        public double GetElement()
+        {
+            return Start++;
         }
     }
     /// <summary>
@@ -48,7 +53,7 @@ namespace GSharpInterpreter
     /// </summary>
     public class RangeSequence : Sequence
     {
-        public double Start { get; }
+        public double Start { get; private set; }
         public double End { get; }
         public int Count
         {
@@ -62,6 +67,14 @@ namespace GSharpInterpreter
         {
             Start = start;
             End = end;
+        }
+        public object GetElement()
+        {
+            if (Count > 0)
+            {
+                return Start++;
+            }
+            else return new Undefined();
         }
     }
 }

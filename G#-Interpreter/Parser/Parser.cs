@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data.SqlTypes;
 using System.Drawing;
 using System.Linq;
 using System.Linq.Expressions;
@@ -41,7 +43,7 @@ namespace GSharpInterpreter
                 {
                     IsFunctionDeclaration = false;
                     Expression instruction = ParseInstruction();
-                    Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
+                    Consume(TokenType.SEMICOLON, $"Expected ';' after {Previous().Lexeme} to end instruction.");
                     AST.Add(instruction);
                 }
                 return AST;
@@ -75,7 +77,7 @@ namespace GSharpInterpreter
                 return ParseImport();
 
             if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
-                return ParseFigure();
+                return ParseRandomDeclaration();
 
             if (Match(TokenType.IF))
                 return ParseIf();
@@ -220,9 +222,13 @@ namespace GSharpInterpreter
                     return FunctionCall(id.Lexeme);
                 return new VariableExpression(id.Lexeme);
             }
-            if (Match(TokenType.POINT))
-                return FunctionCall("point");
-            throw new Error(ErrorType.COMPILING, $"Expected expression after '{Previous().Lexeme}'.");
+            if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
+            {
+                string function = Previous().Lexeme.ToLower();
+                Consume(TokenType.LEFT_PAREN, $"Expected '(' after '{function}'.");
+                return FunctionCall(function);
+            }
+            throw new Error(ErrorType.COMPILING, $"Expected valid expression after '{Previous().Lexeme}'.");
         }
 
         /// <summary>
@@ -246,7 +252,7 @@ namespace GSharpInterpreter
             do
             {
                 Expression instruction = ParseInstruction();
-                Consume(TokenType.SEMICOLON, "Expected ';' after expression.");
+                Consume(TokenType.SEMICOLON, $"Expected ';' in instruction after {Previous().Lexeme}.");
                 instructions.Add(instruction);
             }
             while (Peek().Type != TokenType.IN);
@@ -254,32 +260,6 @@ namespace GSharpInterpreter
             Expression body = ParseExpression();
             return new LetExpression(instructions, body);
         }
-        /*public Expression ParseLet()
-        {
-            // Parse variable assignments
-            List<AssignExpression> assignments = new List<AssignExpression>();
-            do
-            {
-                Token id = Consume(TokenType.IDENTIFIER, "Expected a variable name in a 'let-in' expression.");
-                Consume(TokenType.ASSIGN, $"Expected '=' when initializing variable '{id.Lexeme}'.");
-                try
-                {
-                    Expression value = ParseExpression();
-                    assignments.Add(new AssignExpression(id, value));
-                }
-                catch (Error)
-                {
-                    throw new Error(ErrorType.COMPILING, $"Expected value of '{id.Lexeme}' after '='.");
-                }
-                Consume(TokenType.SEMICOLON, $"Expected ';' after assignment of '{id}'.");
-            }
-            while (Peek().Type == TokenType.IDENTIFIER);
-
-            Consume(TokenType.IN, "Expected 'in' at 'let-in' expression.");
-            Expression body = ParseExpression();
-            return new LetInExpression(assignments, body);
-        }*/
-
         /// <summary>
         /// Parses an assignment expression.
         /// </summary>
@@ -420,16 +400,21 @@ namespace GSharpInterpreter
         /// Parses a random figure expression or a random sequence of figures of the same kind.
         /// </summary>
         /// <returns> An assignment to a constant of a call to a random figure function or to a random sequence of figures function.</returns>
-        private Expression ParseFigure()
+        private Expression ParseRandomDeclaration()
         {
-            string functionid = "random";
-            functionid += Previous().Lexeme.ToLower();
+            bool isSequence = false;
+            string type = Previous().Lexeme.ToLower();
             if (Match(TokenType.SEQUENCE))
             {
-                functionid += "sequence";
+                isSequence = true;
             }
             string id = Consume(TokenType.IDENTIFIER, $"Expected identifier after '{Previous().Lexeme}'.").Lexeme;
-            return new Assignment(id ,new Call(functionid, new List<Expression>()));
+            return new RandomDeclaration(id, type, isSequence);
+        }
+        private Expression ParsePrint()
+        {
+            Expression expressionToPrint = ParseExpression();
+            return new PrintStatement(expressionToPrint);
         }
         /// <summary>
         /// Parses an import expression that adds code from another file.
@@ -437,7 +422,7 @@ namespace GSharpInterpreter
         private Expression ParseImport()
         {
             string id = Consume(TokenType.IDENTIFIER, "Expected an identifier after 'import'.").Lexeme;
-            return new Import(id);
+            return new ImportStatement(id);
         }
         /// <summary>
         /// Parses a restore expression that restores the color to the previous one.
@@ -452,13 +437,10 @@ namespace GSharpInterpreter
         private Expression ParseDraw()
         {
             Expression drawing = ParseExpression();
-            if (drawing is not Geometric)
+            if (drawing is not GeometricExpression)
                 throw new Error(ErrorType.COMPILING, "Expected geometric expression after 'draw'.");
-            if (Match(TokenType.STRING))
-            {
-                return new DrawStatement((Geometric)drawing, Previous().Lexeme);
-            }
-            return new DrawStatement((Geometric)drawing);
+            string label = Consume(TokenType.STRING, "Expected a string label after 'draw'.").Lexeme;
+            return new DrawStatement((GeometricExpression)drawing, label);
         }
         /// <summary>
         /// Parses a color expression.

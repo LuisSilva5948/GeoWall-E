@@ -97,7 +97,7 @@ namespace GSharpInterpreter
                     return $"Function '{function.Identifier}' was declared succesfully.";
                 case Call call:
                     return EvaluateFunction(call);
-                case Geometric geometric:
+                case GeometricExpression geometric:
                     return geometric;
                 default:
                     return null;

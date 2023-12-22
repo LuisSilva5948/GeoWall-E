@@ -10,10 +10,14 @@ namespace GSharpInterpreter
     {
         NUMBER,
         STRING,
-        BOOLEAN,
-        FIGURE,
-        GEOMETRIC,
-        COLOR,
-        VOID
+        MEASURE,
+        POINT,
+        LINE,
+        RAY,
+        SEGMENT,
+        CIRCLE,
+        ARC,
+        SEQUENCE,
+        UNDEFINED
     }
 }

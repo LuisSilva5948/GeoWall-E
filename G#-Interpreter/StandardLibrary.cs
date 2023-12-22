@@ -86,17 +86,17 @@ namespace GSharpInterpreter
         /// Distance between two points.
         /// </summary>
         /// <returns> Returns the distance between two points.</returns>
-        public static double Distance(GSharpFigure.Point p1, GSharpFigure.Point p2)
+        public static double Distance(Point p1, Point p2)
         {
             return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
         /// <summary>
         /// Random measure generator.
         /// </summary>
-        public static Geometric.Measure RandomMeasure()
+        public static Measure RandomMeasure()
         {
             int limit = Math.Min(Interpreter.UI.CanvasWidth, Interpreter.UI.CanvasHeight)/2;
-            return new Geometric.Measure(Random.Next(0, limit));
+            return new Measure(Random.Next(0, limit));
         }
 
 
@@ -120,9 +120,9 @@ namespace GSharpInterpreter
         /// <summary>
         /// Returns the measure between two points.
         /// </summary>
-        public static Geometric.Measure Measure(GSharpFigure.Point p1, GSharpFigure.Point p2)
+        public static Measure Measure(Point p1, Point p2)
         {
-            return new Geometric.Measure(Distance(p1, p2));
+            return new Measure(Distance(p1, p2));
         }
 
 
