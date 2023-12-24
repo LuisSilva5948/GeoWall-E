@@ -62,6 +62,14 @@ namespace GSharpInterpreter
                 // Parsing: Build an abstract syntax tree (AST) from the Tokens
                 Parser parser = new Parser(tokens);
                 List<Expression> AST = parser.Parse();
+                // Check for errors in the parser
+                if (parser.Errors.Count > 0)
+                {
+                    foreach (Error error in lexer.Errors)
+                    {
+                        userInterface.ReportError(error.Report());
+                    }
+                }
 
                 // Evaluating: Evaluate the expressions in the AST and produce a result
                 Evaluator evaluator = new Evaluator();
@@ -69,7 +77,11 @@ namespace GSharpInterpreter
             }
             catch (Error error)
             {
-                //return new List<object>() { error.Report() };
+                userInterface.ReportError(error.Report());
+            }
+            catch (Exception e)
+            {
+                userInterface.ReportError(e.Message);
             }
         }
     }

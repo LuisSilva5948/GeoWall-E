@@ -115,17 +115,6 @@ namespace GSharpInterpreter
             Body = body;
         }
     }
-    /*public class LetInExpression : Expression
-    {
-        public List<AssignExpression> Assignments { get; }
-        public Expression Body { get; }
-
-        public LetInExpression(List<AssignExpression> assignments, Expression body)
-        {
-            Assignments = assignments;
-            Body = body;
-        }
-    }*/
 
     /// <summary>
     /// Represents an assignment expression, where a value is assigned to a variable identified by a string.
@@ -148,9 +137,9 @@ namespace GSharpInterpreter
     public class MatchAssigment : Expression
     {
         public List<string> IDs { get; }
-        public Sequence Sequence { get; }
+        public Expression Sequence { get; }
 
-        public MatchAssigment(List<string> ids, Sequence seq)
+        public MatchAssigment(List<string> ids, Expression seq)
         {
             IDs = ids;
             Sequence = seq;
@@ -252,9 +241,9 @@ namespace GSharpInterpreter
     public class RandomDeclaration : Expression
     {
         public string Name { get; }
-        public string Type { get; }
+        public GSharpType Type { get; }
         public bool IsSequence { get; }
-        public RandomDeclaration(string name, string type, bool isSequence)
+        public RandomDeclaration(string name, GSharpType type, bool isSequence)
         {
             Name = name;
             Type = type;

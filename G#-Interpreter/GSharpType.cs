@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GSharpInterpreter
 {
-    public enum DataType
+    public enum GSharpType
     {
         NUMBER,
         STRING,

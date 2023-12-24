@@ -22,13 +22,14 @@ namespace GSharpInterpreter
         private readonly List<Token> Tokens;    // The list of tokens produced by the lexer
         private int CurrentPosition;            // The current position in the token list
         private bool IsFunctionDeclaration;     // True if the parser is parsing a function declaration (used for error handling)
-        
+        public List<Error> Errors { get; }      // The list of errors produced by the parser
 
         public Parser(List<Token> tokens)
         {
             Tokens = tokens;
             CurrentPosition = 0;
             IsFunctionDeclaration = false;
+            Errors = new List<Error>();
         }
         /// <summary>
         /// Parses the tokens and constructs an abstract syntax tree (AST).
@@ -37,25 +38,26 @@ namespace GSharpInterpreter
         public List<Expression> Parse()
         {
             List<Expression> AST = new List<Expression>();
-            try
+            while (!IsAtEnd())
             {
-                while (!IsAtEnd())
+                try
                 {
                     IsFunctionDeclaration = false;
                     Expression instruction = ParseInstruction();
                     Consume(TokenType.SEMICOLON, $"Expected ';' after {Previous().Lexeme} to end instruction.");
                     AST.Add(instruction);
                 }
-                return AST;
+                catch (Error error)
+                {
+                    Errors.Add(error);
+                    Synchronize();
+                }
+                
             }
-            catch(Exception e)
-            {
-                if (e is Error error)
-                    throw error;
-                else
-                throw new Error(ErrorType.COMPILING, "Invalid Syntax.");
-            }
+            return AST;
         }
+
+
         /// <summary>
         /// Parses an instruction that can be an expression or a statement.
         /// </summary>
@@ -71,6 +73,8 @@ namespace GSharpInterpreter
                 return ParseColor();
             if (Match(TokenType.DRAW))
                 return ParseDraw();
+            if (Match(TokenType.PRINT))
+                return ParsePrint();
             if (Match(TokenType.RESTORE))
                 return ParseRestore();
             if (Match(TokenType.IMPORT))
@@ -275,8 +279,7 @@ namespace GSharpInterpreter
         /// </summary>
         private Expression ParseMultipleAssignments()
         {
-            List<string> ids = new List<string>();
-            ids.Add(Previous().Lexeme);
+            List<string> ids = new List<string>{ Previous().Lexeme };
             do
             {
                 Consume(TokenType.COMMA, $"Expected ',' after variable '{Previous().Lexeme}'.");
@@ -286,9 +289,7 @@ namespace GSharpInterpreter
             while (Peek().Type == TokenType.COMMA);
             Consume(TokenType.ASSIGN, $"Expected '=' when initializing variables in 'match' expression.");
             Expression seq = ParseExpression();
-            if (seq is not Sequence)
-                throw new Error(ErrorType.COMPILING, $"Expected sequence after '=' in 'match' expression.");
-            return new MatchAssigment(ids, (Sequence)seq);
+            return new MatchAssigment(ids, seq);
         }
 
         /// <summary>
@@ -325,6 +326,9 @@ namespace GSharpInterpreter
         /// </summary>
         public Expression FunctionDeclaration(string id, List<Expression> arguments)
         {
+            // Check if function is being declared inside another function
+            if (IsFunctionDeclaration)
+                throw new Error(ErrorType.COMPILING, "Function declarations cannot be nested.");
             // Set flag to true to not parse another FunctionDeclaration inside this one 
             IsFunctionDeclaration = true;
             // Check if function already exists
@@ -403,13 +407,34 @@ namespace GSharpInterpreter
         private Expression ParseRandomDeclaration()
         {
             bool isSequence = false;
-            string type = Previous().Lexeme.ToLower();
+            GSharpType type = GSharpType.POINT;
+            switch (Previous().Type)
+            {
+                case TokenType.LINE:
+                    type = GSharpType.LINE;
+                    break;
+                case TokenType.ARC:
+                    type = GSharpType.ARC;
+                    break;
+                case TokenType.CIRCLE:
+                    type = GSharpType.CIRCLE;
+                    break;
+                case TokenType.RAY:
+                    type = GSharpType.RAY;
+                    break;
+                case TokenType.POINT:
+                    type = GSharpType.POINT;
+                    break;
+                case TokenType.SEGMENT:
+                    type = GSharpType.SEGMENT;
+                    break;
+            }
             if (Match(TokenType.SEQUENCE))
             {
                 isSequence = true;
             }
             string id = Consume(TokenType.IDENTIFIER, $"Expected identifier after '{Previous().Lexeme}'.").Lexeme;
-            return new RandomDeclaration(id, type, isSequence);
+            return new Assignment(id, new RandomDeclaration(id, type, isSequence));
         }
         private Expression ParsePrint()
         {
@@ -563,6 +588,16 @@ namespace GSharpInterpreter
                 return Advance();
 
             throw new Error(ErrorType.COMPILING, message);
+        }
+        /// <summary>
+        /// If an error occurs, synchronizes the parser by skipping tokens until it finds a semicolon.
+        /// </summary>
+        private void Synchronize()
+        {
+            while (!IsAtEnd())
+            {
+                if (Advance().Type == TokenType.SEMICOLON) return;
+            }
         }
         #endregion
     }

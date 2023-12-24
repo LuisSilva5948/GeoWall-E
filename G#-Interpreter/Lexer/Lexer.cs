@@ -14,6 +14,7 @@ namespace GSharpInterpreter
         private List<Token> Tokens;                     // The list of Tokens
         private int StartofLexeme;                      // The start of the current lexeme
         private int CurrentPosition;                    // The current position in the source code
+        private int Line;                               // The current line number
         public List<Error> Errors { get; private set; } // The list of errors found during lexing
 
         public Lexer(string source)
@@ -22,6 +23,7 @@ namespace GSharpInterpreter
             Tokens = new List<Token>();
             StartofLexeme = 0;
             CurrentPosition = 0;
+            Line = 1;
             Errors = new List<Error>();
         }
 
@@ -32,11 +34,18 @@ namespace GSharpInterpreter
         {
             while (!IsAtEnd())
             {
-                StartofLexeme = CurrentPosition;
-                ScanToken();
+                try
+                {
+                    StartofLexeme = CurrentPosition;
+                    ScanToken();
+                }
+                catch (Error error)
+                {
+                    Errors.Add(error);
+                }
             }
             //add end of file token
-            Tokens.Add(new Token(TokenType.EOF, "EOF", null));
+            Tokens.Add(new Token(TokenType.EOF, "EOF", null, Line));
             return Tokens;
         }
         /// <summary>
@@ -51,7 +60,9 @@ namespace GSharpInterpreter
                 case ' ':
                 case '\r':
                 case '\t':
+                    break;
                 case '\n':
+                    Line++;
                     break;
                 //scan separators and operators
                 case '(': AddToken(TokenType.LEFT_PAREN); break;
@@ -79,7 +90,7 @@ namespace GSharpInterpreter
                     break;
                 case '.':
                     if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
-                    else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.");
+                    else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", Line);
                     break;
                 //scan strings
                 case '\"': ScanString(); break;
@@ -93,7 +104,7 @@ namespace GSharpInterpreter
                     {
                         ScanIdentifier();
                     }
-                    else throw new Error(ErrorType.COMPILING, $"Character '{c}' is not supported.");
+                    else throw new Error(ErrorType.COMPILING, $"Character '{c}' is not supported.", Line);
                     break;
             }
         }
@@ -122,7 +133,7 @@ namespace GSharpInterpreter
                 }
             }
             if (isinvalidnumber)
-                throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.");
+                throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", Line);
             else
             AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
         }
@@ -175,7 +186,7 @@ namespace GSharpInterpreter
             {
                 if (IsAtEnd())
                 {
-                    throw new Error(ErrorType.COMPILING, "Unfinished string.");
+                    throw new Error(ErrorType.COMPILING, "Unfinished string.", Line);
                 }
                 Advance();
             }
@@ -248,7 +259,7 @@ namespace GSharpInterpreter
         private void AddToken(TokenType type, object literal)
         {
             string lexeme = GetLexeme();
-            Tokens.Add(new Token(type, lexeme, literal));
+            Tokens.Add(new Token(type, lexeme, literal, Line));
         }
 
         /// <summary>

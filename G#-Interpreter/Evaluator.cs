@@ -18,6 +18,7 @@ namespace GSharpInterpreter
         private Stack<Dictionary<string, object>> Scopes;   // The stack of scopes
         private readonly int CallLimit = 1000;              // The maximum amount of calls allowed
         private int Calls;                                  // The amount of calls made
+        public List<Error> Errors { get; private set; }     // The list of errors encountered during the evaluation
 
         public Evaluator()
         {
@@ -75,8 +76,6 @@ namespace GSharpInterpreter
             // Evaluate the expression
             switch (expression)
             {
-                case null:
-                    return null;
                 case LiteralExpression literal:
                     return literal.Value;
                 case UnaryExpression unary:
@@ -98,11 +97,16 @@ namespace GSharpInterpreter
                 case Call call:
                     return EvaluateFunction(call);
                 case GeometricExpression geometric:
-                    return geometric;
+                    throw new Exception("Geometric Expressions are not supported yet.");
+                case RandomDeclaration randomDeclaration:
+                    return EvaluateRandomDeclaration(randomDeclaration);
                 default:
                     return null;
             }   
         }
+
+        
+
         /// <summary>
         /// Evaluates a binary expression by performing the corresponding operation on the left and right operands.
         /// </summary>
@@ -219,18 +223,6 @@ namespace GSharpInterpreter
             PopScope();
             return result;
         }
-        /*public object EvaluateLetIn(LetInExpression letIn)
-        {
-            PushScope();
-            foreach (AssignExpression assign in letIn.Assignments)
-            {
-                object value = Evaluate(assign.Value);
-                CurrentScope()[assign.ID] = value;
-            }
-            object result = Evaluate(letIn.Body);
-            PopScope();
-            return result;
-        }*/
         /// <summary>
         /// Evaluates an if-else statement by evaluating the condition and either the then branch or the else branch based on the result.
         /// </summary>
@@ -289,6 +281,63 @@ namespace GSharpInterpreter
                     return result;
             }
         }
+        /// <summary>
+        /// Evaluates a random declaration by generating a random value of the given type.
+        /// </summary>
+        private object EvaluateRandomDeclaration(RandomDeclaration randomDeclaration)
+        {
+            object result = 0;
+            if (randomDeclaration.IsSequence)
+            {
+                switch (randomDeclaration.Type)
+                {
+                    case GSharpType.POINT:
+                        result = StandardLibrary.RandomPointSequence();
+                        break;
+                    case GSharpType.LINE:
+                        result = StandardLibrary.RandomLineSequence();
+                        break;
+                    case GSharpType.SEGMENT:
+                        result = StandardLibrary.RandomSegmentSequence();
+                        break;
+                    case GSharpType.RAY:
+                        result = StandardLibrary.RandomRaySequence();
+                        break;
+                    case GSharpType.CIRCLE:
+                        result = StandardLibrary.RandomCircleSequence();
+                        break;
+                    case GSharpType.ARC:
+                        result = StandardLibrary.RandomArcSequence();
+                        break;
+                }
+            }
+            else
+            {
+                switch (randomDeclaration.Type)
+                {
+                    case GSharpType.POINT:
+                        result = StandardLibrary.RandomPoint();
+                        break;
+                    case GSharpType.LINE:
+                        result = StandardLibrary.RandomLine();
+                        break;
+                    case GSharpType.SEGMENT:
+                        result = StandardLibrary.RandomSegment();
+                        break;
+                    case GSharpType.RAY:
+                        result = StandardLibrary.RandomRay();
+                        break;
+                    case GSharpType.CIRCLE:
+                        result = StandardLibrary.RandomCircle();
+                        break;
+                    case GSharpType.ARC:
+                        result = StandardLibrary.RandomArc();
+                        break;
+                }
+            }
+            return result;
+        }
+
 
         #region Helper Methods
 

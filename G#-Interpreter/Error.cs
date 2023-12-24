@@ -13,7 +13,7 @@ namespace GSharpInterpreter
     {
         public string Message { get; private set; }         // The error message
         public ErrorType ErrorType { get; private set; }    // The type of the error
-        public int? Line { get; private set; }               // The line number where the error occurred
+        public int? Line { get; private set; }              // The line number where the error occurred
         public Error(ErrorType errorType, string message): base(message)
         {
             ErrorType = errorType;

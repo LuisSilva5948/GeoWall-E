@@ -19,6 +19,7 @@ namespace GSharpInterpreter
         ELSE,           // Represents the "else" keyword
         IMPORT,         // Represents the "import" keyword
         DRAW,           // Represents the "draw" keyword
+        PRINT,          // Represents the "print" keyword
         COLOR,          // Represents the "color" keyword
         RESTORE,        // Represents the "restore" keyword
 

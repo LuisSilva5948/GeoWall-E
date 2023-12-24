@@ -8,7 +8,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GSharpInterpreter
 {
-    public abstract class GSharpFigure
+    public abstract class GSharpFigure: Expression
     {
     }
     public class Measure : GSharpFigure

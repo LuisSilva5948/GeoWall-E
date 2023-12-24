@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace GSharpInterpreter
     /// <summary>
     /// Represents a finite sequence of expressions of the same type.
     /// </summary>
-    public class FiniteSequence : Sequence
+    public class FiniteSequence : Sequence, IEnumerable<Expression>
     {
         public List<Expression> Elements { get; }
         public FiniteSequence(List<Expression> elements)
@@ -22,36 +23,51 @@ namespace GSharpInterpreter
             Elements = elements;
         }
         public int Count { get { return Elements.Count; } }
-        public Expression GetElement()
+        
+        public IEnumerator GetEnumerator()
         {
-            if (Count > 0)
-            {
-                Expression next = Elements[0];
-                Elements.RemoveAt(0);
-                return next;
-            }
-            else return new Undefined();
+            return Elements.GetEnumerator();
+        }
+
+        IEnumerator<Expression> IEnumerable<Expression>.GetEnumerator()
+        {
+            return Elements.GetEnumerator();
         }
     }
     /// <summary>
     /// Represents an infinite sequence of expressions of integers.
     /// </summary>
-    public class InfiniteSequence : Sequence
+    public class InfiniteSequence : Sequence, IEnumerable<double>
     {
         public double Start { get; private set; }
         public InfiniteSequence(double start)
         {
             Start = start;
         }
-        public double GetElement()
+        public IEnumerator<double> GetEnumerator()
         {
-            return Start++;
+            double n = Start;
+            while (true)
+            {
+                yield return n;
+                n++;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            double n = Start;
+            while (true)
+            {
+                yield return n;
+                n++;
+            }
         }
     }
     /// <summary>
     /// Represents a sequence of integers in a range.
     /// </summary>
-    public class RangeSequence : Sequence
+    public class RangeSequence : Sequence, IEnumerable<double>
     {
         public double Start { get; private set; }
         public double End { get; }
@@ -68,13 +84,20 @@ namespace GSharpInterpreter
             Start = start;
             End = end;
         }
-        public object GetElement()
+        public IEnumerator<double> GetEnumerator()
         {
-            if (Count > 0)
+            for (double i = Start; i <= End; i++)
             {
-                return Start++;
+                yield return i;
             }
-            else return new Undefined();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            for (double i = Start; i <= End; i++)
+            {
+                yield return i;
+            }
         }
     }
 }

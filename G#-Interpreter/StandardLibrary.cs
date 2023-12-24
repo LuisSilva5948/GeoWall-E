@@ -70,7 +70,7 @@ namespace GSharpInterpreter
         /// Random X coordinate generator.
         /// </summary>
         /// <returns> A random number between 0 and the width of the canvas.</returns>
-        public static int RandomXCoordinate()
+        public static double RandomXCoordinate()
         {
             return Random.Next(0, Interpreter.UI.CanvasWidth);
         }
@@ -78,10 +78,141 @@ namespace GSharpInterpreter
         /// Random Y coordinate generator.
         /// </summary>
         /// <returns> A random number between 0 and the height of the canvas.</returns>
-        public static int RandomYCoordinate()
+        public static double RandomYCoordinate()
         {
             return Random.Next(0, Interpreter.UI.CanvasHeight);
         }
+        /// <summary>
+        /// Random point generator.
+        /// </summary>
+        public static Point RandomPoint()
+        {
+            return new Point(RandomXCoordinate(), RandomYCoordinate());
+        }
+        /// <summary>
+        /// Random measure generator.
+        /// </summary>
+        public static Measure RandomMeasure()
+        {
+            int limit = Math.Min(Interpreter.UI.CanvasWidth, Interpreter.UI.CanvasHeight) / 2;
+            return new Measure(Random.Next(0, limit));
+        }
+        /// <summary>
+        /// Random line generator.
+        /// </summary>
+        public static Line RandomLine()
+        {
+            return new Line(RandomPoint(), RandomPoint());
+        }
+        /// <summary>
+        /// Random ray generator.
+        /// </summary>
+        public static Ray RandomRay()
+        {
+            return new Ray(RandomPoint(), RandomPoint());
+        }
+        /// <summary>
+        /// Random segment generator.
+        /// </summary>
+        public static Segment RandomSegment()
+        {
+            return new Segment(RandomPoint(), RandomPoint());
+        }
+        /// <summary>
+        /// Random circle generator.
+        /// </summary>
+        public static Circle RandomCircle()
+        {
+            return new Circle(RandomPoint(), RandomMeasure());
+        }
+        /// <summary>
+        /// Random arc generator.
+        /// </summary>
+        public static Arc RandomArc()
+        {
+            return new Arc(RandomPoint(), RandomMeasure(), RandomPoint(), RandomPoint());
+        }
+        /// <summary>
+        /// Random sequence of points generator.
+        /// </summary>
+        /// <returns></returns>
+        public static FiniteSequence RandomPointSequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> points = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                points.Add(RandomPoint());
+            }
+            return new FiniteSequence(points);
+        }
+        /// <summary>
+        /// Random sequence of lines generator.
+        /// </summary>
+        public static FiniteSequence RandomLineSequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> lines = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                lines.Add(RandomLine());
+            }
+            return new FiniteSequence(lines);
+        }
+        /// <summary>
+        /// Random sequence of rays generator.
+        /// </summary>
+        public static FiniteSequence RandomRaySequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> rays = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                rays.Add(RandomRay());
+            }
+            return new FiniteSequence(rays);
+        }
+        /// <summary>
+        /// Random sequence of segments generator.
+        /// </summary>
+        public static FiniteSequence RandomSegmentSequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> segments = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                segments.Add(RandomSegment());
+            }
+            return new FiniteSequence(segments);
+        }
+        /// <summary>
+        /// Random sequence of circles generator.
+        /// </summary>
+        public static FiniteSequence RandomCircleSequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> circles = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                circles.Add(RandomCircle());
+            }
+            return new FiniteSequence(circles);
+        }
+        /// <summary>
+        /// Random sequence of arcs generator.
+        /// </summary>
+        /// <returns></returns>
+        public static FiniteSequence RandomArcSequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> arcs = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                arcs.Add(RandomArc());
+            }
+            return new FiniteSequence(arcs);
+        }
+        
         /// <summary>
         /// Distance between two points.
         /// </summary>
@@ -91,14 +222,22 @@ namespace GSharpInterpreter
             return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
         /// <summary>
-        /// Random measure generator.
+        /// Random point in circle generator.
         /// </summary>
-        public static Measure RandomMeasure()
+        public static Point RandomPointInCircle(Circle circle)
         {
-            int limit = Math.Min(Interpreter.UI.CanvasWidth, Interpreter.UI.CanvasHeight)/2;
-            return new Measure(Random.Next(0, limit));
+            double angle = Random.NextDouble() * 2 * Math.PI;
+            double x = circle.Center.X + circle.Radius.Value * Math.Cos(angle);
+            double y = circle.Center.Y + circle.Radius.Value * Math.Sin(angle);
+            return new Point(x, y);
         }
-
+        public static Point RandomPointInArc(Arc arc)
+        {
+            double angle = Random.NextDouble() * 2 * Math.PI;
+            double x = arc.Center.X + arc.Radius.Value * Math.Cos(angle);
+            double y = arc.Center.Y + arc.Radius.Value * Math.Sin(angle);
+            return new Point(x, y);
+        }
 
         #endregion
 
