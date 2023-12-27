@@ -83,11 +83,6 @@ namespace GSharpInterpreter
                 case '<': AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
                 case '>': AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
                 case '=': AddToken(Match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
-                case '_': 
-                    if (char.IsLetterOrDigit(Peek())) 
-                        ScanIdentifier();
-                    else AddToken(TokenType.UNDERSCORE);
-                    break;
                 case '.':
                     if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
                     else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
@@ -100,7 +95,7 @@ namespace GSharpInterpreter
                     {
                         ScanNumber();
                     }
-                    else if (char.IsLetter(c))
+                    else if (char.IsLetter(c) || c == '_')
                     {
                         ScanIdentifier();
                     }

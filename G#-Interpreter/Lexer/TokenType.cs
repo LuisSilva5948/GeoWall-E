@@ -55,7 +55,6 @@ namespace GSharpInterpreter
         SEMICOLON,      // Represents a semicolon ";"
         COMMA,          // Represents a comma ","
         DOTS,           // Represents 3 dots "..."
-        UNDERSCORE,     // Represents an underscore "_"
 
         // Arithmetic Operators
         ADDITION,       // Represents the addition operator "+"

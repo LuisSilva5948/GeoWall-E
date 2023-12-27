@@ -295,6 +295,8 @@ namespace GSharpInterpreter
             while (Peek().Type == TokenType.COMMA);
             Consume(TokenType.ASSIGN, $"Expected '=' when initializing variables in 'match' expression.");
             Expression seq = ParseExpression();
+            if (seq is not Sequence)
+                throw new Error(ErrorType.COMPILING, "Expected sequence in 'match' expression.", CurrentLine);
             return new MultipleAssignment(ids, seq);
         }
 

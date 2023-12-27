@@ -24,12 +24,16 @@ namespace GSharpInterpreter
         }
         public int Count { get { return Elements.Count; } }
         
-        public IEnumerator GetEnumerator()
+        public List<Expression> GetElements()
+        {
+            return new List<Expression>(Elements);
+        }
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return Elements.GetEnumerator();
         }
 
-        IEnumerator<Expression> IEnumerable<Expression>.GetEnumerator()
+        public IEnumerator<Expression> GetEnumerator()
         {
             return Elements.GetEnumerator();
         }

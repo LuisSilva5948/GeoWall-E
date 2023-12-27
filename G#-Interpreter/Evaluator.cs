@@ -16,7 +16,6 @@ namespace GSharpInterpreter
     public class Evaluator
     {
         private Scope Scope;                                // The scope of the evaluator
-        private Stack<Dictionary<string, object>> Scopes;   // The stack of scopes
         private readonly int CallLimit = 100;               // The maximum amount of calls allowed
         private int Calls;                                  // The amount of calls made
         public List<Error> Errors { get; private set; }     // The list of errors encountered during the evaluation
@@ -25,33 +24,7 @@ namespace GSharpInterpreter
         {
             Errors = new List<Error>();
             Scope = new Scope();
-            Scopes = new Stack<Dictionary<string, object>>();
-            Scopes.Push(new Dictionary<string, object>());
         }
-        /*/// <summary>
-        /// Creates a new scope with the values of the current scope and pushes it to the stack of scopes.
-        /// </summary>
-        private void PushScope()
-        {
-            Dictionary<string, object> newScope = new Dictionary<string, object>();
-            foreach (var keyvaluepair in CurrentScope())
-                newScope[keyvaluepair.Key] = keyvaluepair.Value;
-            Scopes.Push(newScope);
-        }
-        /// <summary>
-        /// Removes the topmost scope from the stack of scopes.
-        /// </summary>
-        private void PopScope()
-        {
-            Scopes.Pop();
-        }
-        /// <summary>
-        /// Gets the current scope from the stack of scopes.
-        /// </summary>
-        private Dictionary<string, object> CurrentScope()
-        {
-            return this.Scopes.Peek();
-        }*/
         public void Evaluate(List<Expression> AST)
         {
             // Evaluate the expressions
@@ -114,13 +87,14 @@ namespace GSharpInterpreter
                 case RandomDeclaration randomDeclaration:
                     return EvaluateRandomDeclaration(randomDeclaration);
                 case MultipleAssignment multipleAssignment:
-                    return EvaluateMultipleAssignment(multipleAssignment);
+                    EvaluateMultipleAssignment(multipleAssignment);
+                    return "Constants declared succesfully.";
                 case PrintStatement print:
                     Interpreter.UI.Print(Evaluate(print.Expression).ToString());
                     return "Printed";
 
                 default:
-                    throw new Error(ErrorType.COMPILING, "Invalid expression.");
+                    throw new Error(ErrorType.RUNTIME, "Invalid expression.");
             }   
         }
 
@@ -143,11 +117,59 @@ namespace GSharpInterpreter
             StandardLibrary.DeclaredFunctions[function.Identifier] = function;
         }
 
-        private object EvaluateMultipleAssignment(MultipleAssignment multipleAssignment)
+        private void EvaluateMultipleAssignment(MultipleAssignment multipleAssignment)
         {
             List<string> variables = multipleAssignment.IDs;
             Expression sequence = (Sequence)multipleAssignment.Sequence;
-            throw new NotImplementedException();
+            if (sequence is FiniteSequence finiteSequence)
+            {
+                // Get the elements of the sequence
+                List<Expression> elements = finiteSequence.GetElements();
+                // Iterate through the variables except the last one
+                for (int i = 0; i < variables.Count - 1; i++)
+                {
+                    // If there are no more elements, the variable gets an undefined value
+                    if (elements.Count == 0)
+                        Scope.SetConstant(variables[i], new Undefined());
+                    // Otherwise, the variable gets the value of the next element, and the element is removed from the list
+                    else
+                    {
+                        Scope.SetConstant(variables[i], Evaluate(elements[0]));
+                        elements.RemoveAt(0);
+                    }
+                }
+                // The last variable gets the rest of the sequence
+                Scope.SetConstant(variables[variables.Count - 1], new FiniteSequence(elements));
+            }
+            else if (sequence is InfiniteSequence infiniteSequence)
+            {
+                // Get the enumerator of the sequence
+                IEnumerator<double> enumerator = infiniteSequence.GetEnumerator();
+                // Iterate through the variables except the last one
+                for (int i = 0; i < variables.Count - 1; i++)
+                {
+                    enumerator.MoveNext();
+                    Scope.SetConstant(variables[i], enumerator.Current);
+                }
+                // The last variable gets the rest of the sequence
+                Scope.SetConstant(variables[variables.Count - 1], new InfiniteSequence(enumerator.Current));
+            }
+            else if (sequence is RangeSequence rangeSequence)
+            {
+                // Get the enumerator of the sequence
+                IEnumerator<double> enumerator = rangeSequence.GetEnumerator();
+                // Iterate through the variables except the last one
+                for (int i = 0; i < variables.Count - 1; i++)
+                {
+                    // If there are no more elements, the variable gets an undefined value
+                    if (rangeSequence.Count == 0)
+                        Scope.SetConstant(variables[i], new Undefined());
+                    else if (enumerator.MoveNext())
+                    Scope.SetConstant(variables[i], enumerator.Current);
+                }
+                // The last variable gets the rest of the sequence
+                Scope.SetConstant(variables[variables.Count - 1], new RangeSequence(enumerator.Current, rangeSequence.End));
+            }
         }
 
 
