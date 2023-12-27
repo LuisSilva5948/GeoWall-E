@@ -23,6 +23,12 @@ namespace GSharpInterpreter
         private int CurrentPosition;            // The current position in the token list
         private bool IsFunctionDeclaration;     // True if the parser is parsing a function declaration (used for error handling)
         public List<Error> Errors { get; }      // The list of errors produced by the parser
+        private int CurrentLine { 
+            get 
+            { 
+                return Tokens[CurrentPosition].Line; 
+            } 
+        }                                       // The current line number
 
         public Parser(List<Token> tokens)
         {
@@ -44,7 +50,7 @@ namespace GSharpInterpreter
                 {
                     IsFunctionDeclaration = false;
                     Expression instruction = ParseInstruction();
-                    Consume(TokenType.SEMICOLON, $"Expected ';' after {Previous().Lexeme} to end instruction.");
+                    Consume(TokenType.SEMICOLON, $"Expected ';' after '{Previous().Lexeme}' to end instruction.");
                     AST.Add(instruction);
                 }
                 catch (Error error)
@@ -63,10 +69,10 @@ namespace GSharpInterpreter
         /// </summary>
         private Expression ParseInstruction()
         {
-            if (Match(TokenType.IDENTIFIER)) {
-                if (Peek().Type == TokenType.COMMA)
+            if (Peek().Type == TokenType.IDENTIFIER) {
+                if (PeekNext().Type == TokenType.COMMA)
                     return ParseMultipleAssignments();
-                if (Peek().Type == TokenType.ASSIGN)
+                else if (PeekNext().Type == TokenType.ASSIGN)
                     return ParseAssignment();
             }
             if (Match(TokenType.COLOR))
@@ -198,12 +204,12 @@ namespace GSharpInterpreter
                 Expression right = ParseUnary();
                 return new UnaryExpression(Operator, right);
             }
-            return ParseLiteral();
+            return ParsePrimary();
         }
         /// <summary>
-        /// Parses a literal expression (number, string, boolean, group).
+        /// Parses a literal expression (number, string, boolean, group) or a call to a function.
         /// </summary>
-        private Expression ParseLiteral()
+        private Expression ParsePrimary()
         {
             if (Match(TokenType.BOOLEAN, TokenType.NUMBER, TokenType.STRING))
             {
@@ -224,7 +230,7 @@ namespace GSharpInterpreter
                 Token id = Previous();
                 if (Match(TokenType.LEFT_PAREN))
                     return FunctionCall(id.Lexeme);
-                return new VariableExpression(id.Lexeme);
+                return new ConstantExpression(id.Lexeme);
             }
             if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
             {
@@ -232,7 +238,7 @@ namespace GSharpInterpreter
                 Consume(TokenType.LEFT_PAREN, $"Expected '(' after '{function}'.");
                 return FunctionCall(function);
             }
-            throw new Error(ErrorType.COMPILING, $"Expected valid expression after '{Previous().Lexeme}'.");
+            throw new Error(ErrorType.COMPILING, $"Expected valid expression after '{Previous().Lexeme}'.", CurrentLine);
         }
 
         /// <summary>
@@ -269,7 +275,7 @@ namespace GSharpInterpreter
         /// </summary>
         private Expression ParseAssignment()
         {
-            string id = Previous().Lexeme;
+            string id = Advance().Lexeme;
             Consume(TokenType.ASSIGN, $"Expected '=' when initializing variable '{id}'.");
             Expression value = ParseExpression();
             return new Assignment(id, value);
@@ -279,7 +285,7 @@ namespace GSharpInterpreter
         /// </summary>
         private Expression ParseMultipleAssignments()
         {
-            List<string> ids = new List<string>{ Previous().Lexeme };
+            List<string> ids = new List<string>{ Advance().Lexeme };
             do
             {
                 Consume(TokenType.COMMA, $"Expected ',' after variable '{Previous().Lexeme}'.");
@@ -289,7 +295,7 @@ namespace GSharpInterpreter
             while (Peek().Type == TokenType.COMMA);
             Consume(TokenType.ASSIGN, $"Expected '=' when initializing variables in 'match' expression.");
             Expression seq = ParseExpression();
-            return new MatchAssigment(ids, seq);
+            return new MultipleAssignment(ids, seq);
         }
 
         /// <summary>
@@ -314,8 +320,8 @@ namespace GSharpInterpreter
             {
                 foreach (Expression argument in arguments)
                 {
-                    if (argument is not VariableExpression parameter)
-                        throw new Error(ErrorType.COMPILING, "Expected valid variable names as parameters in function declaration.");
+                    if (argument is not ConstantExpression parameter)
+                        throw new Error(ErrorType.COMPILING, "Expected valid variable names as parameters in function declaration.", CurrentLine);
                 }
                 return FunctionDeclaration(id, arguments);
             }
@@ -328,39 +334,31 @@ namespace GSharpInterpreter
         {
             // Check if function is being declared inside another function
             if (IsFunctionDeclaration)
-                throw new Error(ErrorType.COMPILING, "Function declarations cannot be nested.");
+                throw new Error(ErrorType.COMPILING, "Function declarations cannot be nested.", CurrentLine);
             // Set flag to true to not parse another FunctionDeclaration inside this one 
             IsFunctionDeclaration = true;
-            // Check if function already exists
-            if (StandardLibrary.DeclaredFunctions.ContainsKey(id))
-                throw new Error(ErrorType.COMPILING, $"Function '{id}' already exists and can't be redefined.");
-            // Add function to declared functions temporarily
-            StandardLibrary.DeclaredFunctions[id] = null;
-            List<VariableExpression> parameters = new List<VariableExpression>();
+
+            List<ConstantExpression> parameters = new List<ConstantExpression>();
             // Check if arguments are parameters and are not repeated
             foreach (Expression argument in arguments)
             {
-                if (argument is not VariableExpression parameter)
-                    throw new Error(ErrorType.COMPILING, "Expected valid variable name as parameter in function declaration.");
+                if (argument is not ConstantExpression parameter)
+                    throw new Error(ErrorType.COMPILING, "Expected valid variable name as parameter in function declaration.", CurrentLine);
                 if (parameters.Contains(parameter))
-                {
-                    throw new Error(ErrorType.COMPILING, $"Parameter name '{parameter.ID}' cannot be used more than once.");
-                }
+                    throw new Error(ErrorType.COMPILING, $"Parameter name '{parameter.ID}' cannot be used more than once.", CurrentLine);
                 parameters.Add(parameter);
             }
             try
             {
                 Expression body = ParseExpression();
                 Function function = new Function(id, parameters, body);
-                // Add function to declared functions permanently
                 StandardLibrary.AddFunction(function);
                 return function;
             }
-            catch (Error)
+            catch (Error e)
             {
-                // Remove invalid function from declared functions
-                StandardLibrary.DeclaredFunctions.Remove(id);
-                throw new Error(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.");
+                Errors.Add(e);
+                throw new Error(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.", CurrentLine);
             }
         }
         /// <summary>
@@ -372,7 +370,7 @@ namespace GSharpInterpreter
             if (Peek().Type == TokenType.NUMBER && PeekNext().Type == TokenType.DOTS)
             {
                 Expression sequence;
-                double start = (double)Previous().Literal;
+                double start = (double)Advance().Literal;
                 Consume(TokenType.DOTS, "Expected '...' after number.");
                 if (Match(TokenType.NUMBER))
                 {
@@ -436,13 +434,16 @@ namespace GSharpInterpreter
             string id = Consume(TokenType.IDENTIFIER, $"Expected identifier after '{Previous().Lexeme}'.").Lexeme;
             return new Assignment(id, new RandomDeclaration(id, type, isSequence));
         }
+        /// <summary>
+        /// Parses a print statement.
+        /// </summary>
         private Expression ParsePrint()
         {
             Expression expressionToPrint = ParseExpression();
             return new PrintStatement(expressionToPrint);
         }
         /// <summary>
-        /// Parses an import expression that adds code from another file.
+        /// Parses an import statement that adds code from another file.
         /// </summary>
         private Expression ParseImport()
         {
@@ -450,25 +451,25 @@ namespace GSharpInterpreter
             return new ImportStatement(id);
         }
         /// <summary>
-        /// Parses a restore expression that restores the color to the previous one.
+        /// Parses a restore statement that restores the color to the previous one.
         /// </summary>
         private Expression ParseRestore()
         {
             return new RestoreStatement();
         }
         /// <summary>
-        /// Parses a draw expression with or without a string label.
+        /// Parses a draw statement with or without a string label.
         /// </summary>
         private Expression ParseDraw()
         {
             Expression drawing = ParseExpression();
             if (drawing is not GeometricExpression)
-                throw new Error(ErrorType.COMPILING, "Expected geometric expression after 'draw'.");
+                throw new Error(ErrorType.COMPILING, "Expected geometric expression after 'draw'.", CurrentLine);
             string label = Consume(TokenType.STRING, "Expected a string label after 'draw'.").Lexeme;
             return new DrawStatement((GeometricExpression)drawing, label);
         }
         /// <summary>
-        /// Parses a color expression.
+        /// Parses a color statement.
         /// </summary>
         private Expression ParseColor()
         {
@@ -494,7 +495,7 @@ namespace GSharpInterpreter
                 case "gray":
                     return new ColorStatement(GSharpColor.GRAY);
                 default:
-                    throw new Error(ErrorType.COMPILING, $"Invalid color '{color}'.");
+                    throw new Error(ErrorType.COMPILING, $"Invalid color '{color}'.", CurrentLine);
             }
         }
 
@@ -587,7 +588,7 @@ namespace GSharpInterpreter
             if (Check(type))
                 return Advance();
 
-            throw new Error(ErrorType.COMPILING, message);
+            throw new Error(ErrorType.COMPILING, message, CurrentLine);
         }
         /// <summary>
         /// If an error occurs, synchronizes the parser by skipping tokens until it finds a semicolon.

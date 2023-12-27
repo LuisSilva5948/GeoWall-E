@@ -13,12 +13,7 @@ namespace GeoWall_E
         private void button1_Click(object sender, EventArgs e)
         {
             string code = richTextBox1.Text;
-            List<object> results = Interpreter.Run(code);
-            foreach (object result in results)
-            {
-                richTextBox2.Text += result.ToString() + "\n";
-            }
-            panel_Paint();
+            Interpreter.Execute(code, new UI());
         }
         private void panel_Paint()
         {
@@ -41,6 +36,57 @@ namespace GeoWall_E
             Font font = new Font("Arial", 5);
             g.DrawString("punto A", font, brush, 100, 40);
             g.DrawEllipse(pen, 100, 40, 4, 4);
+        }
+    }
+    public class UI : IUserInterface
+    {
+        public int CanvasWidth => throw new NotImplementedException();
+
+        public int CanvasHeight => throw new NotImplementedException();
+
+        public void DrawArc(Arc arc, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawCircle(Circle circle, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawLine(Line line, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawRay(Ray ray, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawSegment(Segment segment, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawText(string text, GSharpInterpreter.Point point, GSharpColor color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Print(string text)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReportError(string message)
+        {
+            throw new NotImplementedException();
         }
     }
 }

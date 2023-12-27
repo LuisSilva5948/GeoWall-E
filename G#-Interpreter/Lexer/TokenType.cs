@@ -78,7 +78,6 @@ namespace GSharpInterpreter
         GREATER_EQUAL,  // Represents the greater than or equal to operator ">="
         LESS_EQUAL,     // Represents the less than or equal to operator "<="
 
-
         // End of File
         EOF             // Represents the end of file marker
     }

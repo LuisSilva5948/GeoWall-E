@@ -31,10 +31,6 @@ namespace GSharpInterpreter
         /// The dictionary of declared functions during the execution of the program.
         /// </summary>
         public static Dictionary<string, Function> DeclaredFunctions { get; private set; } = new Dictionary<string, Function>();
-        /// <summary>
-        /// The dictionary of global variables.
-        /// </summary>
-        public static Dictionary<string, object> GlobalVariables { get; private set; } = new Dictionary<string, object>();
         
         /// <summary>
         /// Adds a function declaration to the dictionary of declared functions.
@@ -46,20 +42,13 @@ namespace GSharpInterpreter
         public static void Reset()
         {
             DeclaredFunctions = new Dictionary<string, Function>();
-            GlobalVariables = new Dictionary<string, object>();
         }
-
         public static void AddFunction(Function function)
         {
-            DeclaredFunctions[function.Identifier] = function;
-        }
-        public static void AddGlobalVariable(string identifier, object value)
-        {
-            GlobalVariables[identifier] = value;
-        }
-        public static object GetGlobalVariable(string identifier)
-        {
-            return GlobalVariables[identifier];
+            if (!DeclaredFunctions.TryAdd(function.Identifier, function))
+            {
+                throw new Error(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
+            }
         }
 
 
@@ -333,6 +322,8 @@ namespace GSharpInterpreter
             else 
                 throw new Error(ErrorType.COMPILING, "The exp function expects a numeric argument.");
         }
+
+        
 
         #endregion
     }

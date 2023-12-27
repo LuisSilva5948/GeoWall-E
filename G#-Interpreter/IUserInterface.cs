@@ -11,15 +11,14 @@ namespace GSharpInterpreter
     {
         int CanvasWidth { get; }
         int CanvasHeight { get; }
-        void DrawPoint(Point point, Color color);
-        void DrawLine(Line line, Color color);
-        void DrawSegment(Segment segment, Color color);
-        void DrawRay(Ray ray, Color color);
-        void DrawCircle(Circle circle, Color color);
-        void DrawArc(Arc arc, Color color);
-        void DrawText(string text, Point point, Color color);
-        void Print(List<string> text);
+        void DrawPoint(Point point, GSharpColor color);
+        void DrawLine(Line line, GSharpColor color);
+        void DrawSegment(Segment segment, GSharpColor color);
+        void DrawRay(Ray ray, GSharpColor color);
+        void DrawCircle(Circle circle, GSharpColor color);
+        void DrawArc(Arc arc, GSharpColor color);
+        void DrawText(string text, Point point, GSharpColor color);
+        void Print(string text);
         void ReportError(string message);
-        void Draw(GSharpFigure figure);
     }
 }

@@ -15,17 +15,20 @@ namespace GSharpInterpreter
     /// </summary>
     public class Evaluator
     {
+        private Scope Scope;                                // The scope of the evaluator
         private Stack<Dictionary<string, object>> Scopes;   // The stack of scopes
-        private readonly int CallLimit = 1000;              // The maximum amount of calls allowed
+        private readonly int CallLimit = 100;               // The maximum amount of calls allowed
         private int Calls;                                  // The amount of calls made
         public List<Error> Errors { get; private set; }     // The list of errors encountered during the evaluation
 
         public Evaluator()
         {
+            Errors = new List<Error>();
+            Scope = new Scope();
             Scopes = new Stack<Dictionary<string, object>>();
             Scopes.Push(new Dictionary<string, object>());
         }
-        /// <summary>
+        /*/// <summary>
         /// Creates a new scope with the values of the current scope and pushes it to the stack of scopes.
         /// </summary>
         private void PushScope()
@@ -48,18 +51,25 @@ namespace GSharpInterpreter
         private Dictionary<string, object> CurrentScope()
         {
             return this.Scopes.Peek();
-        }
-        public List<object> Evaluate(List<Expression> AST)
+        }*/
+        public void Evaluate(List<Expression> AST)
         {
-            List<object> Results = new List<object>();
             // Evaluate the expressions
             foreach (Expression expression in AST)
             {
-                object result = Evaluate(expression);
-                if (result is not null)
-                    Results.Add(result);
+                try
+                {
+                    Evaluate(expression);
+                }
+                catch(Error error)
+                {
+                    Errors.Add(error);
+                }
+                catch (Exception e)
+                {
+                    Errors.Add(new Error(ErrorType.RUNTIME, e.Message));
+                }
             }
-            return Results;
         }
         /// <summary>
         /// Evaluates the given expression and returns the result.
@@ -70,8 +80,7 @@ namespace GSharpInterpreter
         {
             // Check if the amount of calls exceeds the call limit
             if (Calls > CallLimit)
-                throw new Error(ErrorType.COMPILING, "Stack Overflow.");
-            Calls++;
+                throw new Error(ErrorType.RUNTIME, "Stack Overflow.");
 
             // Evaluate the expression
             switch (expression)
@@ -84,28 +93,63 @@ namespace GSharpInterpreter
                     return EvaluateBinary(Evaluate(binary.Left), binary.Operator, Evaluate(binary.Right));
                 case GroupingExpression grouping:
                     return Evaluate(grouping.Expression);
-                case VariableExpression variable:
-                    return EvaluateVariable(variable.ID);
+                case ConstantExpression constant:
+                    return Scope.GetValue(constant.ID);
+                    //return EvaluateConstant(constant.ID);
                 case Assignment assign:
-                    return CurrentScope()[assign.ID] = Evaluate(assign.Value);
+                    Scope.SetConstant(assign.ID, Evaluate(assign.Value));
+                    return $"Constant '{assign.ID}' was declared succesfully.";
+                    //return CurrentScope()[assign.ID] = Evaluate(assign.Value);
                 case Conditional ifElse:
                     return EvaluateIfElse(ifElse);
                 case LetExpression letIn:
                     return EvaluateLetIn(letIn);
                 case Function function:
-                    return $"Function '{function.Identifier}' was declared succesfully.";
+                    EvaluateFunction(function);
+                    return "Function declared";
                 case Call call:
-                    return EvaluateFunction(call);
+                    return EvaluateCall(call);
                 case GeometricExpression geometric:
                     throw new Exception("Geometric Expressions are not supported yet.");
                 case RandomDeclaration randomDeclaration:
                     return EvaluateRandomDeclaration(randomDeclaration);
+                case MultipleAssignment multipleAssignment:
+                    return EvaluateMultipleAssignment(multipleAssignment);
+                case PrintStatement print:
+                    Interpreter.UI.Print(Evaluate(print.Expression).ToString());
+                    return "Printed";
+
                 default:
-                    return null;
+                    throw new Error(ErrorType.COMPILING, "Invalid expression.");
             }   
         }
 
-        
+        private void EvaluateFunction(Function function)
+        {
+            // Check if the parameters are valid
+            foreach (ConstantExpression parameter in function.Parameters)
+            {
+                if (parameter.ID == "_")
+                    throw new Error(ErrorType.COMPILING, "Function parameters can't be named '_'.");
+                if (Scope.Exists(parameter.ID))
+                    throw new Error(ErrorType.COMPILING, $"Another identifier named '{parameter.ID}' already exists and can't be altered.");
+            }
+            // Reserve the parameters in the scope
+            foreach (ConstantExpression parameter in function.Parameters)
+            {
+                Scope.Reserve(parameter.ID);
+            }
+            // Add the function to the declared functions
+            StandardLibrary.DeclaredFunctions[function.Identifier] = function;
+        }
+
+        private object EvaluateMultipleAssignment(MultipleAssignment multipleAssignment)
+        {
+            List<string> variables = multipleAssignment.IDs;
+            Expression sequence = (Sequence)multipleAssignment.Sequence;
+            throw new NotImplementedException();
+        }
+
 
         /// <summary>
         /// Evaluates a binary expression by performing the corresponding operation on the left and right operands.
@@ -199,13 +243,14 @@ namespace GSharpInterpreter
             }
         }
         /// <summary>
-        /// Evaluates a variable expression by retrieving its value from the current scope.
+        /// Evaluates a constant expression by retrieving its value from the current scope.
         /// </summary>
-        /// <param name="name">The name of the variable.</param>
-        /// <returns>The value of the variable.</returns>
-        public object EvaluateVariable(string name)
+        /// <param name="name">The name of the constant.</param>
+        /// <returns>The value of the constant.</returns>
+        public object EvaluateConstant(string name)
         {
-            return CurrentScope().ContainsKey(name)? CurrentScope()[name] : throw new Error(ErrorType.COMPILING, $"Value of {name} wasn't declared.");
+            return Scope.GetValue(name);
+            //return CurrentScope().ContainsKey(name)? CurrentScope()[name] : throw new Error(ErrorType.COMPILING, $"Value of {name} wasn't declared.");
         }
         /// <summary>
         /// Evaluates a let-in expression by creating a new scope, declaring the variables and evaluating the body expression.
@@ -214,13 +259,15 @@ namespace GSharpInterpreter
         /// <returns>The result of the body expression.</returns>
         public object EvaluateLetIn(LetExpression letIn)
         {
-            PushScope();
+            //PushScope();
+            Scope.EnterScope();
             foreach (Expression instruction in letIn.Instructions)
             {
                 Evaluate(instruction);
             }
             object result = Evaluate(letIn.Body);
-            PopScope();
+            //PopScope();
+            Scope.ExitScope();
             return result;
         }
         /// <summary>
@@ -240,8 +287,9 @@ namespace GSharpInterpreter
         /// </summary>
         /// <param name="call">The function call to evaluate.</param>
         /// <returns>The result of the evaluated function.</returns>
-        public object EvaluateFunction(Call call)
+        public object EvaluateCall(Call call)
         {
+            Calls++;
             // Evaluate the arguments
             List<object> args = new List<object>();
             foreach (Expression arg in call.Arguments)
@@ -255,31 +303,27 @@ namespace GSharpInterpreter
             if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
                 throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' wasn't declared.");
 
-            switch (call.Identifier)
+            // Get the function declaration
+            Function function = StandardLibrary.DeclaredFunctions[call.Identifier];
+            // Check the amount of arguments of the function vs the arguments passed
+            if (args.Count != function.Parameters.Count)
+                throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
+            //PushScope();
+            Scope.EnterScope();
+            // Add the evaluated arguments to the scope
+            for (int i = 0; i < function.Parameters.Count; i++)
             {
-                case "print":
-                    if (args.Count != 1)
-                        throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' received '{args.Count}' argument(s) instead of the correct amount '1'");
-                    return args[0];
-                default:
-                    // Get the function declaration
-                    Function function = StandardLibrary.DeclaredFunctions[call.Identifier];
-                    // Check the amount of arguments of the function vs the arguments passed
-                    if (args.Count != function.Parameters.Count)
-                        throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
-                    PushScope();
-                    // Add the evaluated arguments to the scope
-                    for (int i = 0; i < function.Parameters.Count; i++)
-                    {
-                        string parameterName = function.Parameters[i].ID;
-                        object argumentValue = args[i];
-                        CurrentScope()[parameterName] = argumentValue;
-                    }
-                    // Evaluate the body of the function
-                    object result = Evaluate(function.Body);
-                    PopScope();
-                    return result;
+                string parameterName = function.Parameters[i].ID;
+                object argumentValue = args[i];
+                //CurrentScope()[parameterName] = argumentValue;
+                Scope.SetArgument(parameterName, argumentValue);
             }
+            // Evaluate the body of the function
+            object result = Evaluate(function.Body);
+            //PopScope();
+            Scope.ExitScope();
+            Calls--;
+            return result;
         }
         /// <summary>
         /// Evaluates a random declaration by generating a random value of the given type.

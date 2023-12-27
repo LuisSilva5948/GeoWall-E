@@ -74,11 +74,11 @@ namespace GSharpInterpreter
     /// <summary>
     /// Represents a variable expression identified by a string.
     /// </summary>
-    public class VariableExpression : Expression
+    public class ConstantExpression : Expression
     {
         public string ID { get; }
 
-        public VariableExpression(string id)
+        public ConstantExpression(string id)
         {
             ID = id;
         }
@@ -134,12 +134,12 @@ namespace GSharpInterpreter
     /// <summary>
     /// Represents a match-assignment expression, where elements of a sequence are assigned to a list of variables identified by a list of strings.
     /// </summary>
-    public class MatchAssigment : Expression
+    public class MultipleAssignment : Expression
     {
         public List<string> IDs { get; }
         public Expression Sequence { get; }
 
-        public MatchAssigment(List<string> ids, Expression seq)
+        public MultipleAssignment(List<string> ids, Expression seq)
         {
             IDs = ids;
             Sequence = seq;
@@ -152,10 +152,10 @@ namespace GSharpInterpreter
     public class Function : Expression
     {
         public string Identifier { get; }
-        public List<VariableExpression> Parameters { get; }
+        public List<ConstantExpression> Parameters { get; }
         public Expression Body { get; }
 
-        public Function(string identifier, List<VariableExpression> parameters, Expression body)
+        public Function(string identifier, List<ConstantExpression> parameters, Expression body)
         {
             Identifier = identifier;
             Parameters = parameters;

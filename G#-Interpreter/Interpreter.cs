@@ -17,7 +17,7 @@ namespace GSharpInterpreter
         /// Executes the interpreter by running the provided source code.
         /// </summary>
         /// <param name="source">The source code to run.</param>
-        public static List<object> Run(string source)
+        /*public static List<object> Run(string source)
         {
             try
             {
@@ -27,24 +27,40 @@ namespace GSharpInterpreter
                 // Check for errors in the lexer
                 if (lexer.Errors.Count > 0)
                 {
-                    return new List<object>() { lexer.Errors };
+                    List<string> errors = new List<string>();
+                    foreach (Error error in lexer.Errors)
+                    {
+                        errors.Add(error.Report());
+                    }
+                    return new List<object>() { errors };
                 }
 
                 // Parsing: Build an abstract syntax tree (AST) from the Tokens
                 Parser parser = new Parser(tokens);
                 List<Expression> AST = parser.Parse();
+                if (parser.Errors.Count > 0)
+                {
+                    List<string> errors = new List<string>();
+                    foreach (Error error in parser.Errors)
+                    {
+                        errors.Add(error.Report());
+                    }
+                    return new List<object>() { errors };
+                }
 
                 // Evaluating: Evaluate the expressions in the AST and produce a result
                 Evaluator evaluator = new Evaluator();
-                return evaluator.Evaluate(AST);
+                //return evaluator.Evaluate(AST);
             }
             catch (Error error)
             {
                 return new List<object>(){ error.Report() };
             }
-        }
+        }*/
         public static void Execute(string source, IUserInterface userInterface)
         {
+            StandardLibrary.Reset();
+            UI = userInterface;
             try
             {
                 // Lexing: Convert the source code into a sequence of Tokens
@@ -57,6 +73,7 @@ namespace GSharpInterpreter
                     {
                         userInterface.ReportError(error.Report());
                     }
+                    return;
                 }
 
                 // Parsing: Build an abstract syntax tree (AST) from the Tokens
@@ -65,15 +82,24 @@ namespace GSharpInterpreter
                 // Check for errors in the parser
                 if (parser.Errors.Count > 0)
                 {
-                    foreach (Error error in lexer.Errors)
+                    foreach (Error error in parser.Errors)
                     {
                         userInterface.ReportError(error.Report());
                     }
+                    return;
                 }
 
                 // Evaluating: Evaluate the expressions in the AST and produce a result
                 Evaluator evaluator = new Evaluator();
-                //return evaluator.Evaluate(AST);
+                evaluator.Evaluate(AST);
+                if (evaluator.Errors.Count > 0)
+                {
+                    foreach (Error error in evaluator.Errors)
+                    {
+                        userInterface.ReportError(error.Report());
+                    }
+                    return;
+                }
             }
             catch (Error error)
             {

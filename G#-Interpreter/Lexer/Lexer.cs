@@ -14,7 +14,7 @@ namespace GSharpInterpreter
         private List<Token> Tokens;                     // The list of Tokens
         private int StartofLexeme;                      // The start of the current lexeme
         private int CurrentPosition;                    // The current position in the source code
-        private int Line;                               // The current line number
+        private int CurrentLine;                        // The current line number
         public List<Error> Errors { get; private set; } // The list of errors found during lexing
 
         public Lexer(string source)
@@ -23,7 +23,7 @@ namespace GSharpInterpreter
             Tokens = new List<Token>();
             StartofLexeme = 0;
             CurrentPosition = 0;
-            Line = 1;
+            CurrentLine = 1;
             Errors = new List<Error>();
         }
 
@@ -45,7 +45,7 @@ namespace GSharpInterpreter
                 }
             }
             //add end of file token
-            Tokens.Add(new Token(TokenType.EOF, "EOF", null, Line));
+            Tokens.Add(new Token(TokenType.EOF, "EOF", null, CurrentLine));
             return Tokens;
         }
         /// <summary>
@@ -62,7 +62,7 @@ namespace GSharpInterpreter
                 case '\t':
                     break;
                 case '\n':
-                    Line++;
+                    CurrentLine++;
                     break;
                 //scan separators and operators
                 case '(': AddToken(TokenType.LEFT_PAREN); break;
@@ -90,7 +90,7 @@ namespace GSharpInterpreter
                     break;
                 case '.':
                     if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
-                    else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", Line);
+                    else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
                     break;
                 //scan strings
                 case '\"': ScanString(); break;
@@ -104,7 +104,7 @@ namespace GSharpInterpreter
                     {
                         ScanIdentifier();
                     }
-                    else throw new Error(ErrorType.COMPILING, $"Character '{c}' is not supported.", Line);
+                    else throw new Error(ErrorType.COMPILING, $"Character '{c}' is not supported.", CurrentLine);
                     break;
             }
         }
@@ -133,7 +133,7 @@ namespace GSharpInterpreter
                 }
             }
             if (isinvalidnumber)
-                throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", Line);
+                throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
             else
             AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
         }
@@ -156,6 +156,7 @@ namespace GSharpInterpreter
                 case "else": AddToken(TokenType.ELSE, lexeme); break;
                 case "import": AddToken(TokenType.IMPORT, lexeme); break;
                 case "draw": AddToken(TokenType.DRAW, lexeme); break;
+                case "print": AddToken(TokenType.PRINT, lexeme); break;
                 case "color": AddToken(TokenType.COLOR, lexeme); break;
                 case "restore": AddToken(TokenType.RESTORE, lexeme); break;
                 case "point": AddToken(TokenType.POINT, lexeme); break;
@@ -186,7 +187,7 @@ namespace GSharpInterpreter
             {
                 if (IsAtEnd())
                 {
-                    throw new Error(ErrorType.COMPILING, "Unfinished string.", Line);
+                    throw new Error(ErrorType.COMPILING, "Unfinished string.", CurrentLine);
                 }
                 Advance();
             }
@@ -259,7 +260,7 @@ namespace GSharpInterpreter
         private void AddToken(TokenType type, object literal)
         {
             string lexeme = GetLexeme();
-            Tokens.Add(new Token(type, lexeme, literal, Line));
+            Tokens.Add(new Token(type, lexeme, literal, CurrentLine));
         }
 
         /// <summary>
