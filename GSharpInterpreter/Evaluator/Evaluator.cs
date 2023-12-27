@@ -16,13 +16,13 @@ namespace GSharpInterpreter
     public class Evaluator
     {
         private Scope Scope;                                // The scope of the evaluator
-        private readonly int CallLimit = 100;               // The maximum amount of calls allowed
+        private readonly int CallLimit = 500;               // The maximum amount of calls allowed
         private int Calls;                                  // The amount of calls made
-        public List<Error> Errors { get; private set; }     // The list of errors encountered during the evaluation
+        public List<GSharpError> Errors { get; private set; }     // The list of errors encountered during the evaluation
 
         public Evaluator()
         {
-            Errors = new List<Error>();
+            Errors = new List<GSharpError>();
             Scope = new Scope();
         }
         public void Evaluate(List<Expression> AST)
@@ -34,13 +34,13 @@ namespace GSharpInterpreter
                 {
                     Evaluate(expression);
                 }
-                catch(Error error)
+                catch(GSharpError error)
                 {
                     Errors.Add(error);
                 }
                 catch (Exception e)
                 {
-                    Errors.Add(new Error(ErrorType.RUNTIME, e.Message));
+                    Errors.Add(new GSharpError(ErrorType.RUNTIME, e.Message));
                 }
             }
         }
@@ -53,7 +53,7 @@ namespace GSharpInterpreter
         {
             // Check if the amount of calls exceeds the call limit
             if (Calls > CallLimit)
-                throw new Error(ErrorType.RUNTIME, "Stack Overflow.");
+                throw new GSharpError(ErrorType.RUNTIME, "Stack Overflow.");
 
             // Evaluate the expression
             switch (expression)
@@ -92,9 +92,10 @@ namespace GSharpInterpreter
                 case PrintStatement print:
                     Interpreter.UI.Print(Evaluate(print.Expression).ToString());
                     return "Printed";
-
+                case Sequence sequence:
+                    return sequence;
                 default:
-                    throw new Error(ErrorType.RUNTIME, "Invalid expression.");
+                    throw new GSharpError(ErrorType.RUNTIME, "Invalid expression.");
             }   
         }
 
@@ -104,9 +105,9 @@ namespace GSharpInterpreter
             foreach (ConstantExpression parameter in function.Parameters)
             {
                 if (parameter.ID == "_")
-                    throw new Error(ErrorType.COMPILING, "Function parameters can't be named '_'.");
+                    throw new GSharpError(ErrorType.COMPILING, "Function parameters can't be named '_'.");
                 if (Scope.Exists(parameter.ID))
-                    throw new Error(ErrorType.COMPILING, $"Another identifier named '{parameter.ID}' already exists and can't be altered.");
+                    throw new GSharpError(ErrorType.COMPILING, $"Another identifier named '{parameter.ID}' already exists and can't be altered.");
             }
             // Reserve the parameters in the scope
             foreach (ConstantExpression parameter in function.Parameters)
@@ -120,7 +121,9 @@ namespace GSharpInterpreter
         private void EvaluateMultipleAssignment(MultipleAssignment multipleAssignment)
         {
             List<string> variables = multipleAssignment.IDs;
-            Expression sequence = (Sequence)multipleAssignment.Sequence;
+            object sequence = Evaluate(multipleAssignment.Sequence);
+            if (sequence is not Sequence)
+                throw new GSharpError(ErrorType.COMPILING, "Multiple assignment can only be done to sequences.");
             if (sequence is FiniteSequence finiteSequence)
             {
                 // Get the elements of the sequence
@@ -189,11 +192,11 @@ namespace GSharpInterpreter
                     {
                         CheckNumbers(Operator, left, right);
                     }
-                    catch(Error)
+                    catch(GSharpError)
                     {
                         if (left is string || right is string)
                             return left.ToString() + right.ToString();
-                        throw new Error(ErrorType.COMPILING, $"Operands must be Numbers or Strings in '{Operator.Lexeme}' operation.");
+                        throw new GSharpError(ErrorType.COMPILING, $"Operands must be Numbers or Strings in '{Operator.Lexeme}' operation.");
                     }
                     return (double)left + (double)right;
 
@@ -208,7 +211,7 @@ namespace GSharpInterpreter
                     CheckNumbers(Operator, left, right);
                     if ((double)right != 0)
                         return (double)left / (double)right;
-                    throw new Error(ErrorType.COMPILING, "Division by zero is undefined.");
+                    throw new GSharpError(ErrorType.COMPILING, "Division by zero is undefined.");
                 case TokenType.MODULO:
                     CheckNumbers(Operator, left, right);
                     return (double)left % (double)right;
@@ -301,7 +304,7 @@ namespace GSharpInterpreter
         {
             object condition = Evaluate(ifElse.Condition);
             if (!IsBoolean(condition))
-                throw new Error(ErrorType.COMPILING, "Condition in 'If-Else' expression must be a boolean expression.");
+                throw new GSharpError(ErrorType.COMPILING, "Condition in 'If-Else' expression must be a boolean expression.");
             return (bool)condition ? Evaluate(ifElse.ThenBranch) : Evaluate(ifElse.ElseBranch);
         }
         /// <summary>
@@ -323,13 +326,13 @@ namespace GSharpInterpreter
 
             // Check if the function called is declared
             if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
-                throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' wasn't declared.");
+                throw new GSharpError(ErrorType.COMPILING, $"Function '{call.Identifier}' wasn't declared.");
 
             // Get the function declaration
             Function function = StandardLibrary.DeclaredFunctions[call.Identifier];
             // Check the amount of arguments of the function vs the arguments passed
             if (args.Count != function.Parameters.Count)
-                throw new Error(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
+                throw new GSharpError(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
             //PushScope();
             Scope.EnterScope();
             // Add the evaluated arguments to the scope
@@ -415,7 +418,7 @@ namespace GSharpInterpreter
         public void CheckBoolean(Token Operator, object right)
         {
             if (IsBoolean(right)) return;
-            throw new Error(ErrorType.COMPILING, $"Operand must be Boolean in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.COMPILING, $"Operand must be Boolean in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operands are boolean values. Throws a semantic error if they are not.
@@ -426,7 +429,7 @@ namespace GSharpInterpreter
         public void CheckBooleans(Token Operator, object left, object right)
         {
             if (IsBoolean(left, right)) return;
-            throw new Error(ErrorType.COMPILING, $"Operands must be Boolean in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.COMPILING, $"Operands must be Boolean in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operand is a number. Throws a semantic error if it is not.
@@ -436,7 +439,7 @@ namespace GSharpInterpreter
         public void CheckNumber(Token Operator, object right)
         {
             if (IsNumber(right)) return;
-            throw new Error(ErrorType.COMPILING, $"Operand must be Number in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.COMPILING, $"Operand must be Number in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operands are numbers. Throws a semantic error if they are not.
@@ -447,7 +450,7 @@ namespace GSharpInterpreter
         public void CheckNumbers(Token Operator, object left, object right)
         {
             if (IsNumber(left, right)) return;
-            throw new Error(ErrorType.COMPILING, $"Operands must be Numbers in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.COMPILING, $"Operands must be Numbers in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the given operands are number values.

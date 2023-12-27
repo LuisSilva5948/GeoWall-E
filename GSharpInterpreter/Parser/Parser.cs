@@ -22,7 +22,7 @@ namespace GSharpInterpreter
         private readonly List<Token> Tokens;    // The list of tokens produced by the lexer
         private int CurrentPosition;            // The current position in the token list
         private bool IsFunctionDeclaration;     // True if the parser is parsing a function declaration (used for error handling)
-        public List<Error> Errors { get; }      // The list of errors produced by the parser
+        public List<GSharpError> Errors { get; }      // The list of errors produced by the parser
         private int CurrentLine { 
             get 
             { 
@@ -35,7 +35,7 @@ namespace GSharpInterpreter
             Tokens = tokens;
             CurrentPosition = 0;
             IsFunctionDeclaration = false;
-            Errors = new List<Error>();
+            Errors = new List<GSharpError>();
         }
         /// <summary>
         /// Parses the tokens and constructs an abstract syntax tree (AST).
@@ -53,7 +53,7 @@ namespace GSharpInterpreter
                     Consume(TokenType.SEMICOLON, $"Expected ';' after '{Previous().Lexeme}' to end instruction.");
                     AST.Add(instruction);
                 }
-                catch (Error error)
+                catch (GSharpError error)
                 {
                     Errors.Add(error);
                     Synchronize();
@@ -238,7 +238,7 @@ namespace GSharpInterpreter
                 Consume(TokenType.LEFT_PAREN, $"Expected '(' after '{function}'.");
                 return FunctionCall(function);
             }
-            throw new Error(ErrorType.COMPILING, $"Expected valid expression after '{Previous().Lexeme}'.", CurrentLine);
+            throw new GSharpError(ErrorType.COMPILING, $"Expected valid expression after '{Previous().Lexeme}'.", CurrentLine);
         }
 
         /// <summary>
@@ -295,8 +295,6 @@ namespace GSharpInterpreter
             while (Peek().Type == TokenType.COMMA);
             Consume(TokenType.ASSIGN, $"Expected '=' when initializing variables in 'match' expression.");
             Expression seq = ParseExpression();
-            if (seq is not Sequence)
-                throw new Error(ErrorType.COMPILING, "Expected sequence in 'match' expression.", CurrentLine);
             return new MultipleAssignment(ids, seq);
         }
 
@@ -323,7 +321,7 @@ namespace GSharpInterpreter
                 foreach (Expression argument in arguments)
                 {
                     if (argument is not ConstantExpression parameter)
-                        throw new Error(ErrorType.COMPILING, "Expected valid variable names as parameters in function declaration.", CurrentLine);
+                        throw new GSharpError(ErrorType.COMPILING, "Expected valid variable names as parameters in function declaration.", CurrentLine);
                 }
                 return FunctionDeclaration(id, arguments);
             }
@@ -336,7 +334,7 @@ namespace GSharpInterpreter
         {
             // Check if function is being declared inside another function
             if (IsFunctionDeclaration)
-                throw new Error(ErrorType.COMPILING, "Function declarations cannot be nested.", CurrentLine);
+                throw new GSharpError(ErrorType.COMPILING, "Function declarations cannot be nested.", CurrentLine);
             // Set flag to true to not parse another FunctionDeclaration inside this one 
             IsFunctionDeclaration = true;
 
@@ -345,9 +343,9 @@ namespace GSharpInterpreter
             foreach (Expression argument in arguments)
             {
                 if (argument is not ConstantExpression parameter)
-                    throw new Error(ErrorType.COMPILING, "Expected valid variable name as parameter in function declaration.", CurrentLine);
+                    throw new GSharpError(ErrorType.COMPILING, "Expected valid variable name as parameter in function declaration.", CurrentLine);
                 if (parameters.Contains(parameter))
-                    throw new Error(ErrorType.COMPILING, $"Parameter name '{parameter.ID}' cannot be used more than once.", CurrentLine);
+                    throw new GSharpError(ErrorType.COMPILING, $"Parameter name '{parameter.ID}' cannot be used more than once.", CurrentLine);
                 parameters.Add(parameter);
             }
             try
@@ -357,10 +355,10 @@ namespace GSharpInterpreter
                 StandardLibrary.AddFunction(function);
                 return function;
             }
-            catch (Error e)
+            catch (GSharpError e)
             {
                 Errors.Add(e);
-                throw new Error(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.", CurrentLine);
+                throw new GSharpError(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.", CurrentLine);
             }
         }
         /// <summary>
@@ -466,7 +464,7 @@ namespace GSharpInterpreter
         {
             Expression drawing = ParseExpression();
             if (drawing is not GeometricExpression)
-                throw new Error(ErrorType.COMPILING, "Expected geometric expression after 'draw'.", CurrentLine);
+                throw new GSharpError(ErrorType.COMPILING, "Expected geometric expression after 'draw'.", CurrentLine);
             string label = Consume(TokenType.STRING, "Expected a string label after 'draw'.").Lexeme;
             return new DrawStatement((GeometricExpression)drawing, label);
         }
@@ -497,7 +495,7 @@ namespace GSharpInterpreter
                 case "gray":
                     return new ColorStatement(GSharpColor.GRAY);
                 default:
-                    throw new Error(ErrorType.COMPILING, $"Invalid color '{color}'.", CurrentLine);
+                    throw new GSharpError(ErrorType.COMPILING, $"Invalid color '{color}'.", CurrentLine);
             }
         }
 
@@ -590,7 +588,7 @@ namespace GSharpInterpreter
             if (Check(type))
                 return Advance();
 
-            throw new Error(ErrorType.COMPILING, message, CurrentLine);
+            throw new GSharpError(ErrorType.COMPILING, message, CurrentLine);
         }
         /// <summary>
         /// If an error occurs, synchronizes the parser by skipping tokens until it finds a semicolon.

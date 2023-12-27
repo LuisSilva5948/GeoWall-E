@@ -48,7 +48,7 @@ namespace GSharpInterpreter
             else if (Constants.Peek().ContainsKey(identifier))
                 return Constants.Peek()[identifier];
             else
-                throw new Error(ErrorType.COMPILING, $"Constant '{identifier}' doesn't exist.");
+                throw new GSharpError(ErrorType.COMPILING, $"Constant '{identifier}' doesn't exist.");
         }
         /// <summary>
         /// Sets the argument with the given identifier to the given value in the current scope.
@@ -59,7 +59,7 @@ namespace GSharpInterpreter
             if (Exists(identifier))
                 Arguments.Peek()[identifier] = value;
             else
-                throw new Error(ErrorType.COMPILING, $"Argument '{identifier}' doesn't exist.");
+                throw new GSharpError(ErrorType.COMPILING, $"Argument '{identifier}' doesn't exist.");
         }
         /// <summary>
         /// Checks if the given identifier exists in the current scope.
@@ -74,7 +74,7 @@ namespace GSharpInterpreter
         public void Reserve(string identifier)
         {
             if (Exists(identifier))
-                throw new Error(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
+                throw new GSharpError(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
             Identifiers.Add(identifier);
         }
         /// <summary>

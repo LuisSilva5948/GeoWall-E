@@ -15,7 +15,7 @@ namespace GSharpInterpreter
         private int StartofLexeme;                      // The start of the current lexeme
         private int CurrentPosition;                    // The current position in the source code
         private int CurrentLine;                        // The current line number
-        public List<Error> Errors { get; private set; } // The list of errors found during lexing
+        public List<GSharpError> Errors { get; private set; } // The list of errors found during lexing
 
         public Lexer(string source)
         {
@@ -24,7 +24,7 @@ namespace GSharpInterpreter
             StartofLexeme = 0;
             CurrentPosition = 0;
             CurrentLine = 1;
-            Errors = new List<Error>();
+            Errors = new List<GSharpError>();
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace GSharpInterpreter
                     StartofLexeme = CurrentPosition;
                     ScanToken();
                 }
-                catch (Error error)
+                catch (GSharpError error)
                 {
                     Errors.Add(error);
                 }
@@ -85,7 +85,7 @@ namespace GSharpInterpreter
                 case '=': AddToken(Match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
                 case '.':
                     if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
-                    else throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
+                    else throw new GSharpError(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
                     break;
                 //scan strings
                 case '\"': ScanString(); break;
@@ -99,7 +99,7 @@ namespace GSharpInterpreter
                     {
                         ScanIdentifier();
                     }
-                    else throw new Error(ErrorType.COMPILING, $"Character '{c}' is not supported.", CurrentLine);
+                    else throw new GSharpError(ErrorType.COMPILING, $"Character '{c}' is not supported.", CurrentLine);
                     break;
             }
         }
@@ -128,7 +128,7 @@ namespace GSharpInterpreter
                 }
             }
             if (isinvalidnumber)
-                throw new Error(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
+                throw new GSharpError(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
             else
             AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
         }
@@ -182,7 +182,7 @@ namespace GSharpInterpreter
             {
                 if (IsAtEnd())
                 {
-                    throw new Error(ErrorType.COMPILING, "Unfinished string.", CurrentLine);
+                    throw new GSharpError(ErrorType.COMPILING, "Unfinished string.", CurrentLine);
                 }
                 Advance();
             }

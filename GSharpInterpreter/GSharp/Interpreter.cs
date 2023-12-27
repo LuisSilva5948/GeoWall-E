@@ -69,7 +69,7 @@ namespace GSharpInterpreter
                 // Check for errors in the lexer
                 if (lexer.Errors.Count > 0)
                 {
-                    foreach (Error error in lexer.Errors)
+                    foreach (GSharpError error in lexer.Errors)
                     {
                         userInterface.ReportError(error.Report());
                     }
@@ -82,7 +82,7 @@ namespace GSharpInterpreter
                 // Check for errors in the parser
                 if (parser.Errors.Count > 0)
                 {
-                    foreach (Error error in parser.Errors)
+                    foreach (GSharpError error in parser.Errors)
                     {
                         userInterface.ReportError(error.Report());
                     }
@@ -94,14 +94,14 @@ namespace GSharpInterpreter
                 evaluator.Evaluate(AST);
                 if (evaluator.Errors.Count > 0)
                 {
-                    foreach (Error error in evaluator.Errors)
+                    foreach (GSharpError error in evaluator.Errors)
                     {
                         userInterface.ReportError(error.Report());
                     }
                     return;
                 }
             }
-            catch (Error error)
+            catch (GSharpError error)
             {
                 userInterface.ReportError(error.Report());
             }

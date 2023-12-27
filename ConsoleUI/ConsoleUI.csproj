@@ -3,13 +3,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
-    <RootNamespace>G__ConsoleInterface</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\G#-Interpreter\GSharp-Interpreter.csproj" />
+    <ProjectReference Include="..\GSharpInterpreter\GSharpInterpreter.csproj" />
   </ItemGroup>
 
 </Project>

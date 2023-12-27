@@ -9,17 +9,17 @@ namespace GSharpInterpreter
     /// <summary>
     /// Represents an error that occurs during the execution of the interpreter.
     /// </summary>
-    public class Error : Exception
+    public class GSharpError : Exception
     {
         public string Message { get; private set; }         // The error message
         public ErrorType ErrorType { get; private set; }    // The type of the error
         public int? Line { get; private set; }              // The line number where the error occurred
-        public Error(ErrorType errorType, string message): base(message)
+        public GSharpError(ErrorType errorType, string message): base(message)
         {
             ErrorType = errorType;
             Message = message;
         }
-        public Error(ErrorType errorType, string message, int line) : base(message)
+        public GSharpError(ErrorType errorType, string message, int line) : base(message)
         {
             ErrorType = errorType;
             Message = message;

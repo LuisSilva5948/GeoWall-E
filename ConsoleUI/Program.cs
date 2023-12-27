@@ -1,7 +1,6 @@
 ﻿using GSharpInterpreter;
-using static System.Net.Mime.MediaTypeNames;
 
-namespace G__ConsoleInterface
+namespace ConsoleUI
 {
     internal class Program
     {

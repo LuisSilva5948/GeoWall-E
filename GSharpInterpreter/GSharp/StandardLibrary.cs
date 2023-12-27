@@ -47,7 +47,7 @@ namespace GSharpInterpreter
         {
             if (!DeclaredFunctions.TryAdd(function.Identifier, function))
             {
-                throw new Error(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
+                throw new GSharpError(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
             }
         }
 
@@ -263,11 +263,11 @@ namespace GSharpInterpreter
         public static object Sqrt(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new Error(ErrorType.COMPILING, "The sqrt function expects exactly one argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The sqrt function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Sqrt((double)arguments[0]);
             else
-                throw new Error(ErrorType.COMPILING, "The sqrt function expects a numeric argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The sqrt function expects a numeric argument.");
         }
         /// <summary>
         /// Sine function.
@@ -275,11 +275,11 @@ namespace GSharpInterpreter
         public static object Sin(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new Error(ErrorType.COMPILING, "The sin function expects exactly one argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The sin function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Sin((double)arguments[0]);
             else
-                throw new Error(ErrorType.COMPILING, "The sin function expects a numeric argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The sin function expects a numeric argument.");
         }
         /// <summary>
         /// Cosine function.
@@ -287,11 +287,11 @@ namespace GSharpInterpreter
         public static object Cos(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new Error(ErrorType.COMPILING, "The cos function expects exactly one argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The cos function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Cos((double)arguments[0]);
             else
-                throw new Error(ErrorType.COMPILING, "The cos function expects a numeric argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The cos function expects a numeric argument.");
         }
         /// <summary>
         /// Logarithm function.
@@ -299,16 +299,16 @@ namespace GSharpInterpreter
         public static object Log(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new Error(ErrorType.COMPILING, "The log function expects exactly one argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The log function expects exactly one argument.");
             if (arguments[0] is double a && arguments[1] is double b)
             {
                 if (a > 0 && b > 0 && b != 1)
                     return Math.Log(a, b);
                 else
-                    throw new Error(ErrorType.COMPILING, "The log function was called with invalid arguments.");
+                    throw new GSharpError(ErrorType.COMPILING, "The log function was called with invalid arguments.");
             }
             else
-                throw new Error(ErrorType.COMPILING, "The log function expects a numeric argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The log function expects a numeric argument.");
         }
         /// <summary>
         /// Exponential function.
@@ -316,11 +316,11 @@ namespace GSharpInterpreter
         public static object Exp(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new Error(ErrorType.COMPILING, "The exp function expects exactly one argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The exp function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Exp((double)arguments[0]);
             else 
-                throw new Error(ErrorType.COMPILING, "The exp function expects a numeric argument.");
+                throw new GSharpError(ErrorType.COMPILING, "The exp function expects a numeric argument.");
         }
 
         
