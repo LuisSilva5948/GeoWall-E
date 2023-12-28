@@ -202,11 +202,15 @@ namespace GSharpInterpreter
     public class DrawStatement : Expression
     {
         public Expression Expression { get; }
-        public string Label { get; set; }
+        public string? Label { get; set; }
         public DrawStatement(Expression expression, string label)
         {
             Expression = expression;
             Label = label;
+        }
+        public DrawStatement(Expression expression)
+        {
+            Expression = expression;
         }
     }
     /// <summary>

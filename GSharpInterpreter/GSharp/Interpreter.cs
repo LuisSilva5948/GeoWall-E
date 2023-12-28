@@ -14,49 +14,10 @@ namespace GSharpInterpreter
         public static IUserInterface UI { get; private set; }
 
         /// <summary>
-        /// Executes the interpreter by running the provided source code.
+        /// Executes the given source code.
         /// </summary>
-        /// <param name="source">The source code to run.</param>
-        /*public static List<object> Run(string source)
-        {
-            try
-            {
-                // Lexing: Convert the source code into a sequence of Tokens
-                Lexer lexer = new Lexer(source);
-                List<Token> tokens = lexer.ScanTokens();
-                // Check for errors in the lexer
-                if (lexer.Errors.Count > 0)
-                {
-                    List<string> errors = new List<string>();
-                    foreach (Error error in lexer.Errors)
-                    {
-                        errors.Add(error.Report());
-                    }
-                    return new List<object>() { errors };
-                }
-
-                // Parsing: Build an abstract syntax tree (AST) from the Tokens
-                Parser parser = new Parser(tokens);
-                List<Expression> AST = parser.Parse();
-                if (parser.Errors.Count > 0)
-                {
-                    List<string> errors = new List<string>();
-                    foreach (Error error in parser.Errors)
-                    {
-                        errors.Add(error.Report());
-                    }
-                    return new List<object>() { errors };
-                }
-
-                // Evaluating: Evaluate the expressions in the AST and produce a result
-                Evaluator evaluator = new Evaluator();
-                //return evaluator.Evaluate(AST);
-            }
-            catch (Error error)
-            {
-                return new List<object>(){ error.Report() };
-            }
-        }*/
+        /// <param name="source"> Code to be executed. </param>
+        /// <param name="userInterface"> Reference to the user interface that will be used. </param>
         public static void Execute(string source, IUserInterface userInterface)
         {
             StandardLibrary.Reset();

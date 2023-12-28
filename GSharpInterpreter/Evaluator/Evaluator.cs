@@ -58,6 +58,29 @@ namespace GSharpInterpreter
             // Evaluate the expression
             switch (expression)
             {
+                // Statements
+                case MultipleAssignment multipleAssignment:
+                    EvaluateMultipleAssignment(multipleAssignment);
+                    return "Constants declared succesfully.";
+                case PrintStatement print:
+                    Interpreter.UI.Print(Evaluate(print.Expression).ToString());
+                    return "Printed";
+                case Assignment assign:
+                    Scope.SetConstant(assign.ID, Evaluate(assign.Value));
+                    return $"Constant '{assign.ID}' was declared succesfully.";
+                case Function function:
+                    EvaluateFunction(function);
+                    return "Function declared";
+                case RestoreStatement:
+                    Scope.RestoreColor();
+                    return "Color restored";
+                case ColorStatement color:
+                    Scope.SetColor(color.Color);
+                    return "Color changed";
+                case DrawStatement draw:
+                    EvaluateDraw(draw.Expression);
+                    return "Figure drawn";
+
                 case LiteralExpression literal:
                     return literal.Value;
                 case UnaryExpression unary:
@@ -68,35 +91,78 @@ namespace GSharpInterpreter
                     return Evaluate(grouping.Expression);
                 case ConstantExpression constant:
                     return Scope.GetValue(constant.ID);
-                    //return EvaluateConstant(constant.ID);
-                case Assignment assign:
-                    Scope.SetConstant(assign.ID, Evaluate(assign.Value));
-                    return $"Constant '{assign.ID}' was declared succesfully.";
-                    //return CurrentScope()[assign.ID] = Evaluate(assign.Value);
+                
                 case Conditional ifElse:
                     return EvaluateIfElse(ifElse);
                 case LetExpression letIn:
                     return EvaluateLetIn(letIn);
-                case Function function:
-                    EvaluateFunction(function);
-                    return "Function declared";
                 case Call call:
                     return EvaluateCall(call);
                 case GeometricExpression geometric:
-                    throw new Exception("Geometric Expressions are not supported yet.");
+                    return EvaluateGeometric(geometric);
                 case RandomDeclaration randomDeclaration:
                     return EvaluateRandomDeclaration(randomDeclaration);
-                case MultipleAssignment multipleAssignment:
-                    EvaluateMultipleAssignment(multipleAssignment);
-                    return "Constants declared succesfully.";
-                case PrintStatement print:
-                    Interpreter.UI.Print(Evaluate(print.Expression).ToString());
-                    return "Printed";
+                
                 case Sequence sequence:
                     return sequence;
+                case GSharpFigure figure:
+                    return figure;
+                
+                case Undefined undefined:
+                    return undefined;
                 default:
                     throw new GSharpError(ErrorType.RUNTIME, "Invalid expression.");
             }   
+        }
+
+        private void EvaluateDraw(Expression expression)
+        {
+            void DrawFigure(GSharpFigure figure)
+            {
+                switch (figure)
+                {
+                    case Point point:
+                        Interpreter.UI.DrawPoint(point, Scope.GetColor());
+                        break;
+                    case Line line:
+                        Interpreter.UI.DrawLine(line, Scope.GetColor());
+                        break;
+                    case Segment segment:
+                        Interpreter.UI.DrawSegment(segment, Scope.GetColor());
+                        break;
+                    case Ray ray:
+                        Interpreter.UI.DrawRay(ray, Scope.GetColor());
+                        break;
+                    case Circle circle:
+                        Interpreter.UI.DrawCircle(circle, Scope.GetColor());
+                        break;
+                    case Arc arc:
+                        Interpreter.UI.DrawArc(arc, Scope.GetColor());
+                        break;
+                }
+            }
+            object expressionToDraw = Evaluate(expression);
+            if (expressionToDraw is FiniteSequence sequence)
+            {
+                foreach (GSharpFigure figure in sequence.Elements)
+                {
+                    DrawFigure(figure);
+                }
+            }
+            else if (expressionToDraw is GSharpFigure figure)
+            {
+                DrawFigure(figure);
+            }
+            else
+            {
+                throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
+            }
+        }
+        
+
+        private object EvaluateGeometric(GeometricExpression geometric)
+        {
+            throw new NotImplementedException();
         }
 
         private void EvaluateFunction(Function function)

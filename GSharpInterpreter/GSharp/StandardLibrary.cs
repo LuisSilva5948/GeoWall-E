@@ -17,6 +17,10 @@ namespace GSharpInterpreter
         /// </summary>
         public static Random Random { get; } = new Random();
         /// <summary>
+        /// Random sequence of numbers between 0 and 1 generated at the beginning of the program.
+        /// </summary>
+        public static FiniteSequence RandomNumericSequence = RandomNumberSequence();
+        /// <summary>
         /// The dictionary of predefined functions of the G# language.
         /// </summary>
         public static Dictionary<string, Func<List<object>, object>> PredefinedFunctions { get; } = new Dictionary<string, Func<List<object>, object>>()
@@ -25,7 +29,15 @@ namespace GSharpInterpreter
             { "sin", Sin },
             { "cos", Cos },
             { "log", Log },
-            { "exp", Exp }
+            { "exp", Exp },
+            { "count", Count },
+            { "measure", Measure },
+            { "point", Point },
+            { "line", Line },
+            { "ray", Ray },
+            { "segment", Segment },
+            { "circle", Circle },
+            { "arc", Arc }
         };  
         /// <summary>
         /// The dictionary of declared functions during the execution of the program.
@@ -42,6 +54,7 @@ namespace GSharpInterpreter
         public static void Reset()
         {
             DeclaredFunctions = new Dictionary<string, Function>();
+            RandomNumericSequence = RandomNumberSequence();
         }
         public static void AddFunction(Function function)
         {
@@ -201,6 +214,19 @@ namespace GSharpInterpreter
             }
             return new FiniteSequence(arcs);
         }
+        /// <summary>
+        /// Random sequence of numbers generator between 0 and 1.
+        /// </summary>
+        public static FiniteSequence RandomNumberSequence()
+        {
+            int amount = Random.Next(2, 20);
+            List<Expression> numbers = new List<Expression>();
+            for (int i = 0; i < amount; i++)
+            {
+                numbers.Add(new LiteralExpression(Random.NextDouble()));
+            }
+            return new FiniteSequence(numbers);
+        }
         
         /// <summary>
         /// Distance between two points.
@@ -235,22 +261,123 @@ namespace GSharpInterpreter
         /// <summary>
         /// Counts the number of elements in a sequence.
         /// </summary>
-        public static object Count(Sequence seq)
+        public static object Count(List<object> arguments)
         {
-            if (seq is FiniteSequence)
-                return ((FiniteSequence)seq).Count;
-            if (seq is RangeSequence)
+            if (arguments.Count != 1)
+                throw new GSharpError(ErrorType.COMPILING, "The count function expects exactly one argument.");
+            if (arguments[0] is FiniteSequence)
+                return ((FiniteSequence)arguments[0]).Count;
+            if (arguments[0] is RangeSequence)
             {
-                return ((RangeSequence)seq).Count;
+                return ((RangeSequence)arguments[0]).Count;
             }
-            return new Undefined();
+            if (arguments[0] is InfiniteSequence)
+            {
+                return new Undefined();
+            }
+            else throw new GSharpError(ErrorType.COMPILING, "The count function expects a sequence as argument.");
+        }
+        /// <summary>
+        /// Returns the random sequence of numbers between 0 and 1 generated at the beginning of the program.
+        /// </summary>
+        public static object Randoms(List<object> arguments)
+        {
+            if (arguments.Count != 0)
+                throw new GSharpError(ErrorType.COMPILING, "The randoms function doesn't expect any arguments.");
+            return RandomNumericSequence;
+        }
+        /// <summary>
+        /// Returns a sequence of random points in the canvas.
+        /// </summary>
+        public static object Samples(List<object> arguments)
+        {
+            if (arguments.Count != 0)
+                throw new GSharpError(ErrorType.COMPILING, "The samples function doesn't expect any arguments.");
+            return RandomPointSequence();
         }
         /// <summary>
         /// Returns the measure between two points.
         /// </summary>
-        public static Measure Measure(Point p1, Point p2)
+        public static Measure Measure(List<object> arguments)
         {
-            return new Measure(Distance(p1, p2));
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The measure function expects exactly two arguments.");
+            if (arguments[0] is Point && arguments[1] is Point)
+            return new Measure(Distance((Point)arguments[0], (Point)arguments[1]));
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The measure function expects two points as arguments.");
+        }
+        /// <summary>
+        /// Returns a point with the given coordinates.
+        /// </summary>
+        public static Point Point(List<object> arguments)
+        {
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The point function expects exactly two arguments.");
+            if (arguments[0] is double && arguments[1] is double)
+                return new Point((double)arguments[0], (double)arguments[1]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The point function expects two numeric arguments.");
+        }
+        /// <summary>
+        /// Returns a line that passes through the given points.
+        /// </summary>
+        public static Line Line(List<object> arguments)
+        {
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The line function expects exactly two arguments.");
+            if (arguments[0] is Point && arguments[1] is Point)
+                return new Line((Point)arguments[0], (Point)arguments[1]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The line function expects two points as arguments.");
+        }
+        /// <summary>
+        /// Returns a ray that starts at the first point and passes through the second point.
+        /// </summary>
+        public static Ray Ray(List<object> arguments)
+        {
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The ray function expects exactly two arguments.");
+            if (arguments[0] is Point && arguments[1] is Point)
+                return new Ray((Point)arguments[0], (Point)arguments[1]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The ray function expects two points as arguments.");
+        }
+        /// <summary>
+        /// Returns a segment that starts at the first point and ends at the second point.
+        /// </summary>
+        public static Segment Segment(List<object> arguments)
+        {
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The segment function expects exactly two arguments.");
+            if (arguments[0] is Point && arguments[1] is Point)
+                return new Segment((Point)arguments[0], (Point)arguments[1]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The segment function expects two points as arguments.");
+        }
+        /// <summary>
+        /// Returns a circle with the given center and radius.
+        /// </summary>
+        public static Circle Circle(List<object> arguments)
+        {
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The circle function expects exactly two arguments.");
+            if (arguments[0] is Point && arguments[1] is Measure)
+                return new Circle((Point)arguments[0], (Measure)arguments[1]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The circle function expects a point and a measure as arguments.");
+        }
+        /// <summary>
+        /// Returns an arc with the given center, radius, and two points.
+        /// </summary>
+        public static Arc Arc(List<object> arguments)
+        {
+            if (arguments.Count != 4)
+                throw new GSharpError(ErrorType.COMPILING, "The arc function expects exactly four arguments.");
+            if (arguments[0] is Point && arguments[1] is Point && arguments[2] is Point && arguments[3] is Measure)
+                return new Arc((Point)arguments[0], (Measure)arguments[1], (Point)arguments[2], (Point)arguments[3]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The arc function expects three points and a measure as arguments.");
         }
 
 
@@ -323,7 +450,6 @@ namespace GSharpInterpreter
                 throw new GSharpError(ErrorType.COMPILING, "The exp function expects a numeric argument.");
         }
 
-        
 
         #endregion
     }

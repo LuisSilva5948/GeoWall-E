@@ -6,6 +6,7 @@ namespace WinFormsUI
 {
     public partial class Form1 : Form, IUserInterface
     {
+        
         public Form1()
         {
             InitializeComponent();
@@ -21,8 +22,7 @@ namespace WinFormsUI
         private void panel_Paint()
         {
             Graphics g = panel1.CreateGraphics();
-            Pen pen = new Pen(Color.Red, 2);
-
+            Pen pen = new Pen(Color.Black, 2);
             // Dibujar líneas y círculos según el texto ingresado
             // Aquí puedes implementar la lógica para interpretar el texto y dibujar las formas correspondientes
 
@@ -39,6 +39,32 @@ namespace WinFormsUI
             Font font = new Font("Arial", 5);
             g.DrawString("punto A", font, brush, 100, 40);
             g.DrawEllipse(pen, 100, 40, 4, 4);
+        }
+        private Color GetColor(GSharpColor color)
+        {
+            switch (color)
+            {
+                case GSharpColor.BLACK:
+                    return Color.Black;
+                case GSharpColor.BLUE:
+                    return Color.Blue;
+                case GSharpColor.CYAN:
+                    return Color.Cyan;
+                case GSharpColor.GRAY:
+                    return Color.Gray;
+                case GSharpColor.GREEN:
+                    return Color.Green;
+                case GSharpColor.MAGENTA:
+                    return Color.Magenta;
+                case GSharpColor.RED:
+                    return Color.Red;
+                case GSharpColor.WHITE:
+                    return Color.White;
+                case GSharpColor.YELLOW:
+                    return Color.Yellow;
+                default:
+                    return Color.Black;
+            }
         }
         public int CanvasWidth => panel1.Size.Width;
 
@@ -61,7 +87,9 @@ namespace WinFormsUI
 
         public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color)
         {
-            throw new NotImplementedException();
+            Graphics g = panel1.CreateGraphics();
+            Pen pen = new Pen(GetColor(color), 2);
+            g.DrawEllipse(pen, (float)point.X, (float)point.Y, 4, 4);
         }
 
         public void DrawRay(Ray ray, GSharpColor color)

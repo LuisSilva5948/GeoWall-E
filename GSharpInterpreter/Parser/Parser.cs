@@ -463,17 +463,17 @@ namespace GSharpInterpreter
         private Expression ParseDraw()
         {
             Expression drawing = ParseExpression();
-            if (drawing is not GeometricExpression)
-                throw new GSharpError(ErrorType.COMPILING, "Expected geometric expression after 'draw'.", CurrentLine);
+            if (Check(TokenType.SEMICOLON))
+                return new DrawStatement(drawing);
             string label = Consume(TokenType.STRING, "Expected a string label after 'draw'.").Lexeme;
-            return new DrawStatement((GeometricExpression)drawing, label);
+            return new DrawStatement(drawing, label);
         }
         /// <summary>
         /// Parses a color statement.
         /// </summary>
         private Expression ParseColor()
         {
-            string color = Consume(TokenType.STRING, "Expected a color string after 'color'.").Lexeme;
+            string color = Consume(TokenType.IDENTIFIER, "Expected a color string after 'color'.").Lexeme;
             switch (color.ToLower())
             {
                 case "red":

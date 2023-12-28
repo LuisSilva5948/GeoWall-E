@@ -13,6 +13,10 @@ namespace GSharpInterpreter
     public class Scope
     {
         /// <summary>
+        /// Stack of colors that can be changed.
+        /// </summary>
+        public Stack<GSharpColor> Colors { get; private set; }
+        /// <summary>
         /// List of all identifiers that are defined in this scope.
         /// </summary>
         public List<string> Identifiers { get; private set; }
@@ -26,6 +30,7 @@ namespace GSharpInterpreter
         public Stack<Dictionary<string, object>> Constants { get; private set; }
         public Scope()
         {
+            Colors = new Stack<GSharpColor>();
             Identifiers = new List<string>();
             Arguments = new Stack<Dictionary<string, object>>();
             Constants = new Stack<Dictionary<string, object>>();
@@ -98,6 +103,31 @@ namespace GSharpInterpreter
         {
             Constants.Pop();
             Arguments.Pop();
+        }
+        /// <summary>
+        /// Sets the color of the drawing.
+        /// </summary>
+        public void SetColor(GSharpColor color)
+        {
+            Colors.Push(color);
+        }
+        /// <summary>
+        /// Gets the color of the drawing. If there is no color, it returns black.
+        /// </summary>
+        public GSharpColor GetColor()
+        {
+            if (Colors.Count == 0)
+                return GSharpColor.BLACK;
+            else
+            return Colors.Peek();
+        }
+        /// <summary>
+        /// Restores the color of the drawing to the previous one.
+        /// </summary>
+        public void RestoreColor()
+        {
+            if (Colors.Count > 1)
+                Colors.Pop();
         }
     }
 }
