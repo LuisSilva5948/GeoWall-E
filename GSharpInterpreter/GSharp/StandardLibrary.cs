@@ -37,7 +37,10 @@ namespace GSharpInterpreter
             { "ray", Ray },
             { "segment", Segment },
             { "circle", Circle },
-            { "arc", Arc }
+            { "arc", Arc },
+            { "randoms", Randoms },
+            { "samples", Samples },
+            { "points", Points }
         };  
         /// <summary>
         /// The dictionary of declared functions during the execution of the program.
@@ -53,16 +56,9 @@ namespace GSharpInterpreter
         /// Resets the standard library.
         public static void Reset()
         {
-            DeclaredFunctions = new Dictionary<string, Function>();
             RandomNumericSequence = RandomNumberSequence();
         }
-        public static void AddFunction(Function function)
-        {
-            if (!DeclaredFunctions.TryAdd(function.Identifier, function))
-            {
-                throw new GSharpError(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
-            }
-        }
+        
 
 
 
@@ -241,7 +237,9 @@ namespace GSharpInterpreter
         /// </summary>
         public static Point RandomPointInCircle(Circle circle)
         {
+            // Get a random angle between 0 and 360 degrees in radians.
             double angle = Random.NextDouble() * 2 * Math.PI;
+            // Calculate the x and y coordinates of the point by using the angle and the radius.
             double x = circle.Center.X + circle.Radius.Value * Math.Cos(angle);
             double y = circle.Center.Y + circle.Radius.Value * Math.Sin(angle);
             return new Point(x, y);
@@ -295,6 +293,25 @@ namespace GSharpInterpreter
                 throw new GSharpError(ErrorType.COMPILING, "The samples function doesn't expect any arguments.");
             return RandomPointSequence();
         }
+        /// <summary>
+        /// Returns a sequence of random points in a figure.
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        /// <exception cref="GSharpError"></exception>
+        public static object Points(List<object> arguments)
+        {
+            if (arguments.Count != 1)
+                throw new GSharpError(ErrorType.COMPILING, "The points function expects exactly one argument.");
+            if (arguments[0] is not GSharpFigure)
+                throw new GSharpError(ErrorType.COMPILING, "The points function expects a figure as argument.");
+            if (arguments[0] is Circle circle)
+            {
+                return RandomPointInCircle(circle);
+            }
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Returns the measure between two points.
         /// </summary>

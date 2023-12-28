@@ -19,10 +19,10 @@ namespace GSharpInterpreter
     /// </summary>
     public class Parser
     {
-        private readonly List<Token> Tokens;    // The list of tokens produced by the lexer
-        private int CurrentPosition;            // The current position in the token list
-        private bool IsFunctionDeclaration;     // True if the parser is parsing a function declaration (used for error handling)
-        public List<GSharpError> Errors { get; }      // The list of errors produced by the parser
+        private readonly List<Token> Tokens;        // The list of tokens produced by the lexer
+        private int CurrentPosition;                // The current position in the token list
+        private bool IsFunctionDeclaration;         // True if the parser is parsing a function declaration (used for error handling)
+        public List<GSharpError> Errors { get; }    // The list of errors produced by the parser
         private int CurrentLine { 
             get 
             { 
@@ -352,7 +352,6 @@ namespace GSharpInterpreter
             {
                 Expression body = ParseExpression();
                 Function function = new Function(id, parameters, body);
-                StandardLibrary.AddFunction(function);
                 return function;
             }
             catch (GSharpError e)

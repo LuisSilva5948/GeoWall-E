@@ -181,7 +181,7 @@ namespace GSharpInterpreter
                 Scope.Reserve(parameter.ID);
             }
             // Add the function to the declared functions
-            StandardLibrary.DeclaredFunctions[function.Identifier] = function;
+            Scope.AddFunction(function);
         }
 
         private void EvaluateMultipleAssignment(MultipleAssignment multipleAssignment)
@@ -382,36 +382,30 @@ namespace GSharpInterpreter
         {
             Calls++;
             // Evaluate the arguments
-            List<object> args = new List<object>();
+            List<object> arguments = new List<object>();
             foreach (Expression arg in call.Arguments)
-                args.Add(Evaluate(arg));
+                arguments.Add(Evaluate(arg));
 
             // Check if the call is to a predefined function
             if (StandardLibrary.PredefinedFunctions.ContainsKey(call.Identifier))
-                return StandardLibrary.PredefinedFunctions[call.Identifier](args);
-
-            // Check if the function called is declared
-            if (!StandardLibrary.DeclaredFunctions.ContainsKey(call.Identifier))
-                throw new GSharpError(ErrorType.COMPILING, $"Function '{call.Identifier}' wasn't declared.");
+                return StandardLibrary.PredefinedFunctions[call.Identifier](arguments);
 
             // Get the function declaration
-            Function function = StandardLibrary.DeclaredFunctions[call.Identifier];
+            Function function = Scope.GetFunction(call.Identifier);
             // Check the amount of arguments of the function vs the arguments passed
-            if (args.Count != function.Parameters.Count)
-                throw new GSharpError(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{args.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
-            //PushScope();
+            if (arguments.Count != function.Parameters.Count)
+                throw new GSharpError(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{arguments.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
+            
             Scope.EnterScope();
             // Add the evaluated arguments to the scope
             for (int i = 0; i < function.Parameters.Count; i++)
             {
                 string parameterName = function.Parameters[i].ID;
-                object argumentValue = args[i];
-                //CurrentScope()[parameterName] = argumentValue;
+                object argumentValue = arguments[i];
                 Scope.SetArgument(parameterName, argumentValue);
             }
             // Evaluate the body of the function
             object result = Evaluate(function.Body);
-            //PopScope();
             Scope.ExitScope();
             Calls--;
             return result;

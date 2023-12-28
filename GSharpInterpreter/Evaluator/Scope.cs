@@ -13,13 +13,13 @@ namespace GSharpInterpreter
     public class Scope
     {
         /// <summary>
+        /// Stack of functions that can be called.
+        /// </summary>
+        public Stack<Dictionary<string, Function>> Functions { get; private set; }
+        /// <summary>
         /// Stack of colors that can be changed.
         /// </summary>
         public Stack<GSharpColor> Colors { get; private set; }
-        /// <summary>
-        /// List of all identifiers that are defined in this scope.
-        /// </summary>
-        public List<string> Identifiers { get; private set; }
         /// <summary>
         /// Arguments of a function that can change.
         /// </summary>
@@ -31,11 +31,12 @@ namespace GSharpInterpreter
         public Scope()
         {
             Colors = new Stack<GSharpColor>();
-            Identifiers = new List<string>();
             Arguments = new Stack<Dictionary<string, object>>();
             Constants = new Stack<Dictionary<string, object>>();
+            Functions = new Stack<Dictionary<string, Function>>();
             Arguments.Push(new Dictionary<string, object>());
             Constants.Push(new Dictionary<string, object>());
+            Functions.Push(new Dictionary<string, Function>());
         }
         /// <summary>
         /// Sets the constant with the given identifier to the given value in the current scope.
@@ -43,7 +44,6 @@ namespace GSharpInterpreter
         public void SetConstant(string identifier, object value)
         {
             if (identifier == "_") return;
-            Reserve(identifier);
             Constants.Peek()[identifier] = value;
         }
         public object GetValue(string identifier)
@@ -60,18 +60,14 @@ namespace GSharpInterpreter
         /// </summary>
         public void SetArgument(string identifier, object value)
         {
-            // Check if the identifier exists in the current scope to avoid creating a new variable
-            if (Exists(identifier))
-                Arguments.Peek()[identifier] = value;
-            else
-                throw new GSharpError(ErrorType.COMPILING, $"Argument '{identifier}' doesn't exist.");
+            Arguments.Peek()[identifier] = value;
         }
         /// <summary>
         /// Checks if the given identifier exists in the current scope.
         /// </summary>
         public bool Exists(string identifier)
         {
-            return Identifiers.Contains(identifier);
+            return Constants.Peek().ContainsKey(identifier) || Arguments.Peek().ContainsKey(identifier);
         }
         /// <summary>
         /// Reserves the given identifier in the current scope.
@@ -80,7 +76,7 @@ namespace GSharpInterpreter
         {
             if (Exists(identifier))
                 throw new GSharpError(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
-            Identifiers.Add(identifier);
+            SetArgument(identifier, new Undefined());
         }
         /// <summary>
         /// Creates a new scope with the values of the current scope and pushes it to the stack of scopes.
@@ -89,12 +85,16 @@ namespace GSharpInterpreter
         {
             Dictionary<string, object> newVariables = new Dictionary<string, object>();
             Dictionary<string, object> newConstants = new Dictionary<string, object>();
+            Dictionary<string, Function> newFunctions = new Dictionary<string, Function>();
             foreach (var keyvaluepair in Arguments.Peek())
                 newVariables[keyvaluepair.Key] = keyvaluepair.Value;
             foreach (var keyvaluepair in Constants.Peek())
                 newConstants[keyvaluepair.Key] = keyvaluepair.Value;
+            foreach (var keyvaluepair in Functions.Peek())
+                newFunctions[keyvaluepair.Key] = keyvaluepair.Value;
             Arguments.Push(newVariables);
             Constants.Push(newConstants);
+            Functions.Push(newFunctions);
         }
         /// <summary>
         /// Removes the topmost scope from the stack of scopes.
@@ -103,6 +103,27 @@ namespace GSharpInterpreter
         {
             Constants.Pop();
             Arguments.Pop();
+            Functions.Pop();
+        }
+        /// <summary>
+        /// Adds a function to the current scope. If the function already exists, it throws an error.
+        /// </summary>
+        public void AddFunction(Function function)
+        {
+            if (StandardLibrary.PredefinedFunctions.ContainsKey(function.Identifier) || !Functions.Peek().TryAdd(function.Identifier, function))
+            {
+                throw new GSharpError(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
+            }
+        }
+        /// <summary>
+        /// Gets the function with the given identifier from the current scope. If the function doesn't exist, it throws an error.
+        /// </summary>
+        public Function GetFunction(string identifier)
+        {
+            if (Functions.Peek().TryGetValue(identifier, out Function function))
+                return function;
+            else
+                throw new GSharpError(ErrorType.COMPILING, $"Function '{identifier}' doesn't exist.");
         }
         /// <summary>
         /// Sets the color of the drawing.

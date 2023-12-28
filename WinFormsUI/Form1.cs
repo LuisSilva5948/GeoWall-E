@@ -1,4 +1,5 @@
 using GSharpInterpreter;
+using System.Drawing;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -99,7 +100,9 @@ namespace WinFormsUI
 
         public void DrawSegment(Segment segment, GSharpColor color)
         {
-            throw new NotImplementedException();
+            Graphics g = panel1.CreateGraphics();
+            Pen pen = new Pen(GetColor(color), 2);
+            g.DrawLine(pen, (float)segment.P1.X, (float)segment.P1.Y, (float)segment.P2.X, (float)segment.P2.Y);
         }
 
         public void DrawText(string text, GSharpInterpreter.Point point, GSharpColor color)
