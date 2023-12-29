@@ -77,15 +77,14 @@ namespace GSharpInterpreter
                 case '/': AddToken(TokenType.DIVISION); break;
                 case '%': AddToken(TokenType.MODULO); break;
                 case '^': AddToken(TokenType.POWER); break;
-                case '&': AddToken(TokenType.AND); break;
-                case '|': AddToken(TokenType.OR); break;
-                case '!': AddToken(Match('=') ? TokenType.NOT_EQUAL : TokenType.NOT); break;
                 case '<': AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
                 case '>': AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
                 case '=': AddToken(Match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
+                case '!':
+                    if (Match('=')) AddToken(TokenType.NOT_EQUAL);
+                    break;
                 case '.':
                     if (Match('.') && Match('.')) AddToken(TokenType.DOTS);
-                    else throw new GSharpError(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
                     break;
                 //scan strings
                 case '\"': ScanString(); break;
@@ -99,7 +98,7 @@ namespace GSharpInterpreter
                     {
                         ScanIdentifier();
                     }
-                    else throw new GSharpError(ErrorType.COMPILING, $"Character '{c}' is not supported.", CurrentLine);
+                    else throw new GSharpError(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
                     break;
             }
         }
@@ -149,6 +148,9 @@ namespace GSharpInterpreter
                 case "if": AddToken(TokenType.IF, lexeme); break;
                 case "then": AddToken(TokenType.THEN, lexeme); break;
                 case "else": AddToken(TokenType.ELSE, lexeme); break;
+                case "and": AddToken(TokenType.AND, lexeme); break;
+                case "or": AddToken(TokenType.OR, lexeme); break;
+                case "not": AddToken(TokenType.NOT, lexeme); break;
                 case "import": AddToken(TokenType.IMPORT, lexeme); break;
                 case "draw": AddToken(TokenType.DRAW, lexeme); break;
                 case "print": AddToken(TokenType.PRINT, lexeme); break;

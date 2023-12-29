@@ -13,6 +13,10 @@ namespace GSharpInterpreter
     public class Scope
     {
         /// <summary>
+        /// List of imported files so that they are not imported again.
+        /// </summary>
+        public List<string> ImportedFiles { get; private set; }
+        /// <summary>
         /// Stack of functions that can be called.
         /// </summary>
         public Stack<Dictionary<string, Function>> Functions { get; private set; }
@@ -37,6 +41,7 @@ namespace GSharpInterpreter
             Arguments.Push(new Dictionary<string, object>());
             Constants.Push(new Dictionary<string, object>());
             Functions.Push(new Dictionary<string, Function>());
+            ImportedFiles = new List<string>();
         }
         /// <summary>
         /// Sets the constant with the given identifier to the given value in the current scope.
@@ -44,6 +49,8 @@ namespace GSharpInterpreter
         public void SetConstant(string identifier, object value)
         {
             if (identifier == "_") return;
+            if (ExistsIdentifier(identifier))
+                throw new GSharpError(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
             Constants.Peek()[identifier] = value;
         }
         public object GetValue(string identifier)
@@ -150,6 +157,20 @@ namespace GSharpInterpreter
         {
             if (Colors.Count > 0)
                 Colors.Pop();
+        }
+        /// <summary>
+        /// Adds the given file to the list of imported files.
+        /// </summary>
+        public void AddImportedFile(string path)
+        {
+            ImportedFiles.Add(path);
+        }
+        /// <summary>
+        /// Checks if the given file already exists in the list of imported files.
+        /// </summary>
+        public bool ExistsImportedFile(string path)
+        {
+            return ImportedFiles.Contains(path);
         }
     }
 }

@@ -121,48 +121,48 @@ namespace GSharpInterpreter
         private void EvaluateImport(ImportStatement import)
         {
             string path = import.Path;
+            // Check if the file was already imported, return if it was cause it's already in the scope
+            if (Scope.ExistsImportedFile(path))
+                return;
             string extension = Path.GetExtension(path);
-            if (extension == ".txt" || extension == ".geo" || extension == ".gs")
+            // Check if the file is a .txt, .geo or .gs file
+            if (!(extension == ".txt" || extension == ".geo" || extension == ".gs"))
+                throw new GSharpError(ErrorType.COMPILING, $"File '{path}' must be a .txt, .geo or .gs file.");
+            // Check if the file exists
+            if (!File.Exists(path))
+                throw new GSharpError(ErrorType.COMPILING, $"File '{path}' doesn't exist.");
+            // Read the file
+            string code = File.ReadAllText(path);
+            // Add its contents to the current scope
+            Lexer lexer = new Lexer(code);
+            List<Token> tokens = lexer.ScanTokens();
+            if (lexer.Errors.Count > 0)
             {
-                // Check if the file exists
-                if (File.Exists(path))
-                {
-                    // Read the file
-                    string code = File.ReadAllText(path);
-                    // Parse the file and add its contents to the current scope
-                    try
-                    {
-                        // Lexing: Convert the source code into a sequence of Tokens
-                        Lexer lexer = new Lexer(code);
-                        List<Token> tokens = lexer.ScanTokens();
-                        // Check for errors in the lexer
-                        if (lexer.Errors.Count > 0)
-                        {
-                            foreach (GSharpError error in lexer.Errors)
-                                Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
-                            return;
-                        }
-                        // Parsing
-                        Parser parser = new Parser(tokens);
-                        List<Expression> AST = parser.Parse();
-                        // Check for errors in the parser
-                        if (parser.Errors.Count > 0)
-                        {
-                            foreach (GSharpError error in parser.Errors)
-                                Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
-                            return;
-                        }
-                        // Evaluating: Evaluate the expressions in the AST and produce a result
-                        Evaluate(AST);
-                    }
-                    catch (GSharpError error)
-                    {
-                        throw new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}");
-                    }
-                }
-                else throw new GSharpError(ErrorType.COMPILING, $"File '{path}' doesn't exist.");
+                foreach (GSharpError error in lexer.Errors)
+                    Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
+                return;
             }
-            else throw new GSharpError(ErrorType.COMPILING, $"File '{path}' must be a .txt, .geo or .gs file.");
+            Parser parser = new Parser(tokens);
+            List<Expression> AST = parser.Parse();
+            if (parser.Errors.Count > 0)
+            {
+                foreach (GSharpError error in parser.Errors)
+                    Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
+                return;
+            }
+            try
+            {
+                Evaluate(AST);
+                Scope.AddImportedFile(path);
+            }
+            catch (GSharpError error)
+            {
+                throw new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}");
+            }
+            catch (Exception e)
+            {
+                throw new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {e.Message}");
+            }
         }
         private void EvaluatePrint(PrintStatement print)
         {
