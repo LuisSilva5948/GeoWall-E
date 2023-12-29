@@ -43,41 +43,35 @@ namespace ConsoleUI
 
             public int CanvasHeight => 100;
 
-            public void DrawArc(Arc arc, GSharpColor color)
+            public void DrawArc(Arc arc, GSharpColor color, string label)
             {
                 Console.WriteLine($"arc drawed");
             }
 
-            public void DrawCircle(Circle circle, GSharpColor color)
+            public void DrawCircle(Circle circle, GSharpColor color, string label)
             {
                 Console.WriteLine($"circle drawed");
             }
 
-            public void DrawLine(Line line, GSharpColor color)
+            public void DrawLine(Line line, GSharpColor color, string label)
             {
                 Console.WriteLine($"line drawed");
             }
 
-            public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color)
+            public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color, string label)
             {
                 Console.WriteLine($"point drawed");
             }
 
-            public void DrawRay(Ray ray, GSharpColor color)
+            public void DrawRay(Ray ray, GSharpColor color, string label)
             {
                 Console.WriteLine($"ray drawed");
             }
 
-            public void DrawSegment(Segment segment, GSharpColor color)
+            public void DrawSegment(Segment segment, GSharpColor color, string label)
             {
                 Console.WriteLine($"segment drawed");
             }
-
-            public void DrawText(string text, GSharpInterpreter.Point point, GSharpColor color)
-            {
-                Console.WriteLine($"{text} dibujado");
-            }
-
             public void Print(string text)
             {
                 Console.WriteLine(text);

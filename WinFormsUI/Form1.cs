@@ -73,36 +73,36 @@ namespace WinFormsUI
 
         public int CanvasHeight => panel1.Size.Height;
 
-        public void DrawArc(Arc arc, GSharpColor color)
+        public void DrawArc(Arc arc, GSharpColor color, string label)
         {
             throw new NotImplementedException();
         }
 
-        public void DrawCircle(Circle circle, GSharpColor color)
+        public void DrawCircle(Circle circle, GSharpColor color, string label)
         {
             Graphics g = panel1.CreateGraphics();
             Pen pen = new Pen(GetColor(color), 2);
             g.DrawEllipse(pen, (float)circle.Center.X - (float)circle.Radius.Value, (float)circle.Center.Y - (float)circle.Radius.Value, (float)circle.Radius.Value * 2, (float)circle.Radius.Value * 2);
         }
 
-        public void DrawLine(Line line, GSharpColor color)
+        public void DrawLine(Line line, GSharpColor color, string label)
         {
             throw new NotImplementedException();
         }
 
-        public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color)
+        public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color, string label)
         {
             Graphics g = panel1.CreateGraphics();
             Pen pen = new Pen(GetColor(color), 4);
             g.DrawEllipse(pen, (float)point.X, (float)point.Y, 4, 4);
         }
 
-        public void DrawRay(Ray ray, GSharpColor color)
+        public void DrawRay(Ray ray, GSharpColor color, string label)
         {
             throw new NotImplementedException();
         }
 
-        public void DrawSegment(Segment segment, GSharpColor color)
+        public void DrawSegment(Segment segment, GSharpColor color, string label)
         {
             Graphics g = panel1.CreateGraphics();
             Pen pen = new Pen(GetColor(color), 2);

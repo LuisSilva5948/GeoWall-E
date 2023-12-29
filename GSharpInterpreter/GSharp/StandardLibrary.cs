@@ -233,6 +233,125 @@ namespace GSharpInterpreter
             return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
         /// <summary>
+        /// Slope of a line between two points in relation to the x axis.
+        /// </summary>
+        public static double Slope(Point p1, Point p2)
+        {
+            if (p2.X == p1.X)
+                return double.NaN;
+            else
+            return (p2.Y - p1.Y) / (p2.X - p1.X);
+        }
+        /// <summary>
+        /// Intercept of a line between two points with the y axis.
+        /// </summary>
+        public static double Intercept(Point p1, Point p2)
+        {
+            double slope = Slope(p1, p2);
+            if (double.IsNaN(slope))
+                return double.NaN;
+            else
+                return p1.Y - slope * p1.X;
+        }
+        public static Point RandomPointInSegment(Segment segment)
+        {
+            {
+                // If the segment is a point, the random point is the point itself.
+                if (segment.P1.Equals(segment.P2))
+                    return segment.P1;
+                // Calculate the slope of the segment.
+                double slope = Slope(segment.P1, segment.P2);
+                if (double.IsNaN(slope))
+                {
+                    // If the segment is vertical, the x coordinate is the same as the x coordinate of the points.
+                    double minY = Math.Min(segment.P1.Y, segment.P2.Y);
+                    double maxY = Math.Max(segment.P1.Y, segment.P2.Y);
+                    return new Point(segment.P1.X, Random.NextDouble() * (maxY - minY) + minY);
+                }
+                else
+                {
+                    double randomDistance = Random.NextDouble();
+                    // Calculate the intercept of the segment and the coordinates of the random point.
+                    double intercept = Intercept(segment.P1, segment.P2);
+                    double x = segment.P1.X + randomDistance * (segment.P2.X - segment.P1.X);
+                    double y = slope * x + intercept;
+                    return new Point(x, y);
+                }
+            }
+        }
+        /// <summary>
+        /// Random point in line generator.
+        /// </summary>
+        public static Point RandomPointInLine(Line line)
+        {
+            // If the line is a point, the random point is the point itself.
+            if (line.P1.Equals(line.P2))
+                return line.P1;
+            double x = 0;
+            double y = 0;
+            double slope = Slope(line.P1, line.P2);
+            double intercept = Intercept(line.P1, line.P2);
+            // If the line is vertical, the x coordinate is the same as the x coordinate of the points.
+            if (double.IsNaN(slope))
+            {
+                return new Point(line.P1.X, Random.NextDouble() * Interpreter.UI.CanvasHeight);
+            }
+            else
+            {
+                // Otherwise, the x coordinate is a random number between 0 and the width of the canvas.
+                x = Random.NextDouble() * Interpreter.UI.CanvasWidth;
+                y = slope * x + intercept;
+                return new Point(x, y);
+            }
+        }
+        /// <summary>
+        /// Random point in ray generator.
+        /// </summary>
+        public static Point RandomPointInRay(Ray ray)
+        {
+            // If the ray is a point, the random point is the point itself.
+            if (ray.P1.Equals(ray.P2))
+                return ray.P1;
+            double x = 0;
+            double y = 0;
+            double slope = Slope(ray.P1, ray.P2);
+            double intercept = Intercept(ray.P1, ray.P2);
+
+
+
+
+
+
+
+            if (ray.P1.X < ray.P2.X) { }
+                //el punto random de un segmento puede dar el de un rayo y el de una linea
+
+
+
+
+
+
+
+
+            // If the line is vertical, the x coordinate is the same as the x coordinate of the points.
+            if (double.IsNaN(slope))
+            {
+                do
+                {
+                    y = Random.NextDouble() * Interpreter.UI.CanvasHeight;
+                }
+                while (y < ray.P1.Y && y > ray.P2.Y);
+                return new Point(ray.P1.X, y);
+            }
+            else
+            {
+                // Otherwise, the x coordinate is a random number between 0 and the width of the canvas.
+                x = Random.NextDouble() * Interpreter.UI.CanvasWidth;
+                y = slope * x + intercept;
+                return new Point(x, y);
+            }
+        }
+        /// <summary>
         /// Random point in circle generator.
         /// </summary>
         public static Point RandomPointInCircle(Circle circle)

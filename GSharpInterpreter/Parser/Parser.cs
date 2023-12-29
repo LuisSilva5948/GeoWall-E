@@ -60,7 +60,6 @@ namespace GSharpInterpreter
                     Errors.Add(error);
                     Synchronize();
                 }
-                
             }
             return AST;
         }
