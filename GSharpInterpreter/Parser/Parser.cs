@@ -85,8 +85,8 @@ namespace GSharpInterpreter
                 return ParseRestore();
             if (Match(TokenType.IMPORT))
                 return ParseImport();
-
-            if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
+            // Check if it's a random declaration and not a function call
+            if (PeekNext().Type != TokenType.LEFT_PAREN && Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
                 return ParseRandomDeclaration();
 
             if (Match(TokenType.IF))
@@ -232,7 +232,7 @@ namespace GSharpInterpreter
                     return FunctionCall(id.Lexeme);
                 return new ConstantExpression(id.Lexeme);
             }
-            if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC))
+            if (Match(TokenType.POINT, TokenType.LINE, TokenType.SEGMENT, TokenType.RAY, TokenType.CIRCLE, TokenType.ARC, TokenType.MEASURE))
             {
                 string function = Previous().Lexeme.ToLower();
                 Consume(TokenType.LEFT_PAREN, $"Expected '(' after '{function}'.");
@@ -439,14 +439,17 @@ namespace GSharpInterpreter
         private Expression ParsePrint()
         {
             Expression expressionToPrint = ParseExpression();
-            return new PrintStatement(expressionToPrint);
+            if (Check(TokenType.SEMICOLON))
+                return new PrintStatement(expressionToPrint);
+            string label = Consume(TokenType.STRING, "Expected a string label after 'print'.").Lexeme;
+            return new PrintStatement(expressionToPrint, label);
         }
         /// <summary>
         /// Parses an import statement that adds code from another file.
         /// </summary>
         private Expression ParseImport()
         {
-            string id = Consume(TokenType.IDENTIFIER, "Expected an identifier after 'import'.").Lexeme;
+            string id = Consume(TokenType.STRING, "Expected a string after 'import'.").Literal.ToString();
             return new ImportStatement(id);
         }
         /// <summary>

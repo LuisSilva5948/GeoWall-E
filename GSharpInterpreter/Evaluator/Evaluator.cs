@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Markup;
+using System.IO;
 
 namespace GSharpInterpreter
 {
@@ -63,7 +63,7 @@ namespace GSharpInterpreter
                     EvaluateMultipleAssignment(multipleAssignment);
                     return "Constants declared succesfully.";
                 case PrintStatement print:
-                    Interpreter.UI.Print(Evaluate(print.Expression).ToString());
+                    EvaluatePrint(print);
                     return "Printed";
                 case Assignment assign:
                     Scope.SetConstant(assign.ID, Evaluate(assign.Value));
@@ -80,6 +80,9 @@ namespace GSharpInterpreter
                 case DrawStatement draw:
                     EvaluateDraw(draw.Expression);
                     return "Figure drawn";
+                case ImportStatement import:
+                    EvaluateImport(import);
+                    return "Imported";
 
                 case LiteralExpression literal:
                     return literal.Value;
@@ -98,8 +101,6 @@ namespace GSharpInterpreter
                     return EvaluateLetIn(letIn);
                 case Call call:
                     return EvaluateCall(call);
-                case GeometricExpression geometric:
-                    return EvaluateGeometric(geometric);
                 case RandomDeclaration randomDeclaration:
                     return EvaluateRandomDeclaration(randomDeclaration);
                 
@@ -114,7 +115,63 @@ namespace GSharpInterpreter
                     throw new GSharpError(ErrorType.RUNTIME, "Invalid expression.");
             }   
         }
-
+        /// <summary>
+        /// Imports the given file and evaluates it to add its contents to the current scope.
+        /// </summary>
+        private void EvaluateImport(ImportStatement import)
+        {
+            string path = import.Path;
+            string extension = Path.GetExtension(path);
+            if (extension == ".txt" || extension == ".geo" || extension == ".gs")
+            {
+                // Check if the file exists
+                if (File.Exists(path))
+                {
+                    // Read the file
+                    string code = File.ReadAllText(path);
+                    // Parse the file and add its contents to the current scope
+                    try
+                    {
+                        // Lexing: Convert the source code into a sequence of Tokens
+                        Lexer lexer = new Lexer(code);
+                        List<Token> tokens = lexer.ScanTokens();
+                        // Check for errors in the lexer
+                        if (lexer.Errors.Count > 0)
+                        {
+                            foreach (GSharpError error in lexer.Errors)
+                                Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
+                            return;
+                        }
+                        // Parsing
+                        Parser parser = new Parser(tokens);
+                        List<Expression> AST = parser.Parse();
+                        // Check for errors in the parser
+                        if (parser.Errors.Count > 0)
+                        {
+                            foreach (GSharpError error in parser.Errors)
+                                Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
+                            return;
+                        }
+                        // Evaluating: Evaluate the expressions in the AST and produce a result
+                        Evaluate(AST);
+                    }
+                    catch (GSharpError error)
+                    {
+                        throw new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}");
+                    }
+                }
+                else throw new GSharpError(ErrorType.COMPILING, $"File '{path}' doesn't exist.");
+            }
+            else throw new GSharpError(ErrorType.COMPILING, $"File '{path}' must be a .txt, .geo or .gs file.");
+        }
+        private void EvaluatePrint(PrintStatement print)
+        {
+            object result = Evaluate(print.Expression);
+            string label = "";
+            if (print.Label != null)
+                 label += " " + print.Label;
+            Interpreter.UI.Print(result.ToString() + label);
+        }
         private void EvaluateDraw(Expression expression)
         {
             void DrawFigure(GSharpFigure figure)
@@ -158,12 +215,6 @@ namespace GSharpInterpreter
                 throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
             }
         }
-        
-
-        private object EvaluateGeometric(GeometricExpression geometric)
-        {
-            throw new NotImplementedException();
-        }
 
         private void EvaluateFunction(Function function)
         {
@@ -172,7 +223,7 @@ namespace GSharpInterpreter
             {
                 if (parameter.ID == "_")
                     throw new GSharpError(ErrorType.COMPILING, "Function parameters can't be named '_'.");
-                if (Scope.Exists(parameter.ID))
+                if (Scope.ExistsIdentifier(parameter.ID))
                     throw new GSharpError(ErrorType.COMPILING, $"Another identifier named '{parameter.ID}' already exists and can't be altered.");
             }
             // Reserve the parameters in the scope

@@ -65,7 +65,7 @@ namespace GSharpInterpreter
         /// <summary>
         /// Checks if the given identifier exists in the current scope.
         /// </summary>
-        public bool Exists(string identifier)
+        public bool ExistsIdentifier(string identifier)
         {
             return Constants.Peek().ContainsKey(identifier) || Arguments.Peek().ContainsKey(identifier);
         }
@@ -74,7 +74,7 @@ namespace GSharpInterpreter
         /// </summary>
         public void Reserve(string identifier)
         {
-            if (Exists(identifier))
+            if (ExistsIdentifier(identifier))
                 throw new GSharpError(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
             SetArgument(identifier, new Undefined());
         }
@@ -110,18 +110,19 @@ namespace GSharpInterpreter
         /// </summary>
         public void AddFunction(Function function)
         {
-            if (StandardLibrary.PredefinedFunctions.ContainsKey(function.Identifier) || !Functions.Peek().TryAdd(function.Identifier, function))
+            if (StandardLibrary.PredefinedFunctions.ContainsKey(function.Identifier) || Functions.Peek().ContainsKey(function.Identifier))
             {
                 throw new GSharpError(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
             }
+            else Functions.Peek().Add(function.Identifier, function);
         }
         /// <summary>
         /// Gets the function with the given identifier from the current scope. If the function doesn't exist, it throws an error.
         /// </summary>
         public Function GetFunction(string identifier)
         {
-            if (Functions.Peek().TryGetValue(identifier, out Function function))
-                return function;
+            if (Functions.Peek().ContainsKey(identifier))
+                return Functions.Peek()[identifier];
             else
                 throw new GSharpError(ErrorType.COMPILING, $"Function '{identifier}' doesn't exist.");
         }
@@ -147,7 +148,7 @@ namespace GSharpInterpreter
         /// </summary>
         public void RestoreColor()
         {
-            if (Colors.Count > 1)
+            if (Colors.Count > 0)
                 Colors.Pop();
         }
     }

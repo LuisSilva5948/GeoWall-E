@@ -1,0 +1,11 @@
+point a;
+point b;
+m = measure(a,b);
+color blue;
+color red;
+draw a;
+restore;
+draw b;
+restore;
+restore;
+draw circle(a,m);

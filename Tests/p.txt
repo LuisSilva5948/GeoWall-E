@@ -1,0 +1,7 @@
+﻿circle pp;
+draw pp;
+
+import "C:\Users\JuanPablo\Desktop\Tests\k.txt";
+
+x = 20*92+23*8-8;
+print x;

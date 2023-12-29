@@ -16,6 +16,8 @@ namespace WinFormsUI
 
         private void button1_Click(object sender, EventArgs e)
         {
+            richTextBox2.Text = "";
+            panel1.Refresh();
             string code = richTextBox1.Text;
             Interpreter.Execute(code, this);
         }
@@ -78,7 +80,9 @@ namespace WinFormsUI
 
         public void DrawCircle(Circle circle, GSharpColor color)
         {
-            throw new NotImplementedException();
+            Graphics g = panel1.CreateGraphics();
+            Pen pen = new Pen(GetColor(color), 2);
+            g.DrawEllipse(pen, (float)circle.Center.X - (float)circle.Radius.Value, (float)circle.Center.Y - (float)circle.Radius.Value, (float)circle.Radius.Value * 2, (float)circle.Radius.Value * 2);
         }
 
         public void DrawLine(Line line, GSharpColor color)
@@ -89,7 +93,7 @@ namespace WinFormsUI
         public void DrawPoint(GSharpInterpreter.Point point, GSharpColor color)
         {
             Graphics g = panel1.CreateGraphics();
-            Pen pen = new Pen(GetColor(color), 2);
+            Pen pen = new Pen(GetColor(color), 4);
             g.DrawEllipse(pen, (float)point.X, (float)point.Y, 4, 4);
         }
 
