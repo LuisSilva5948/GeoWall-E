@@ -78,7 +78,7 @@ namespace GSharpInterpreter
                     Scope.SetColor(color.Color);
                     return "Color changed";
                 case DrawStatement draw:
-                    EvaluateDraw(draw.Expression);
+                    EvaluateDraw(draw);
                     return "Figure drawn";
                 case ImportStatement import:
                     EvaluateImport(import);
@@ -172,48 +172,54 @@ namespace GSharpInterpreter
                  label += " " + print.Label;
             Interpreter.UI.Print(result.ToString() + label);
         }
-        private void EvaluateDraw(Expression expression)
+        private void EvaluateDraw(DrawStatement draw)
         {
-            void DrawFigure(GSharpFigure figure)
+            string label = "";
+            if (draw.Label != null)
+                label = draw.Label;
+            void DrawFigure(GSharpFigure figure, string label = "")
             {
                 switch (figure)
                 {
                     case Point point:
-                        Interpreter.UI.DrawPoint(point, Scope.GetColor());
+                        Interpreter.UI.DrawPoint(point, Scope.GetColor(), label);
                         break;
                     case Line line:
-                        Interpreter.UI.DrawLine(line, Scope.GetColor());
+                        Interpreter.UI.DrawLine(line, Scope.GetColor(), label);
                         break;
                     case Segment segment:
-                        Interpreter.UI.DrawSegment(segment, Scope.GetColor());
+                        Interpreter.UI.DrawSegment(segment, Scope.GetColor(), label);
                         break;
                     case Ray ray:
-                        Interpreter.UI.DrawRay(ray, Scope.GetColor());
+                        Interpreter.UI.DrawRay(ray, Scope.GetColor(), label);
                         break;
                     case Circle circle:
-                        Interpreter.UI.DrawCircle(circle, Scope.GetColor());
+                        Interpreter.UI.DrawCircle(circle, Scope.GetColor(), label);
                         break;
                     case Arc arc:
-                        Interpreter.UI.DrawArc(arc, Scope.GetColor());
+                        Interpreter.UI.DrawArc(arc, Scope.GetColor(), label);
                         break;
                 }
             }
-            object expressionToDraw = Evaluate(expression);
+            object expressionToDraw = Evaluate(draw.Expression);
             if (expressionToDraw is FiniteSequence sequence)
             {
-                foreach (GSharpFigure figure in sequence.Elements)
+                // Checking that all elements are figures of the same type
+                foreach (Expression element in sequence.GetElements())
                 {
-                    DrawFigure(figure);
+                    if (Evaluate(element) is not GSharpFigure)
+                        throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
+                }
+                foreach (Expression element in sequence.GetElements())
+                {
+                    DrawFigure((GSharpFigure)Evaluate(element));
                 }
             }
             else if (expressionToDraw is GSharpFigure figure)
             {
-                DrawFigure(figure);
+                DrawFigure(figure, label);
             }
-            else
-            {
-                throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
-            }
+            else throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
         }
 
         private void EvaluateFunction(Function function)
