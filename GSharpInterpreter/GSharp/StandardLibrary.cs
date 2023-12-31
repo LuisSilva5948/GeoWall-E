@@ -555,7 +555,7 @@ namespace GSharpInterpreter
             if (arguments.Count != 4)
                 throw new GSharpError(ErrorType.COMPILING, "The arc function expects exactly four arguments.");
             if (arguments[0] is Point && arguments[1] is Point && arguments[2] is Point && arguments[3] is Measure)
-                return new Arc((Point)arguments[0], (Measure)arguments[1], (Point)arguments[2], (Point)arguments[3]);
+                return new Arc((Point)arguments[0], (Measure)arguments[3], (Point)arguments[2], (Point)arguments[1]);
             else
                 throw new GSharpError(ErrorType.COMPILING, "The arc function expects three points and a measure as arguments.");
         }

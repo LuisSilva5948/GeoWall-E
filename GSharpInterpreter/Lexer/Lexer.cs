@@ -74,7 +74,12 @@ namespace GSharpInterpreter
                 case '+': AddToken(TokenType.ADDITION); break;
                 case '-': AddToken(TokenType.SUBSTRACTION); break;
                 case '*': AddToken(TokenType.MULTIPLICATION); break;
-                case '/': AddToken(TokenType.DIVISION); break;
+                case '/':
+                    if (Match('/'))
+                        IgnoreLine();
+                    else if (Match('*'))
+                        IgnoreBlock();
+                    else AddToken(TokenType.DIVISION); break;
                 case '%': AddToken(TokenType.MODULO); break;
                 case '^': AddToken(TokenType.POWER); break;
                 case '<': AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
@@ -102,6 +107,7 @@ namespace GSharpInterpreter
                     break;
             }
         }
+
         /// <summary>
         /// Scans a number token.
         /// </summary>
@@ -194,6 +200,33 @@ namespace GSharpInterpreter
             literal = literal.Substring(1, literal.Length - 2);
             AddToken(TokenType.STRING, literal);
         }
+        /// <summary>
+        /// Ignores the rest of the line after //.
+        /// </summary>
+        private void IgnoreLine()
+        {
+            while (Peek() != '\n' && !IsAtEnd())
+            {
+                Advance();
+            }
+        }
+        /// <summary>
+        /// Ignores the rest of the block starting with /* and ending with */.
+        /// </summary>
+        private void IgnoreBlock()
+        {
+            while (Peek() != '*' && PeekAhead(1) != '/' && !IsAtEnd())
+            {
+                if (Peek() == '\n')
+                    CurrentLine++;
+                Advance();
+            }
+            //consume the */
+            Advance();
+            Advance();
+        }
+
+
         /// <summary>
         /// Checks if the current character matches the expected character and advances if it does.
         /// </summary>
