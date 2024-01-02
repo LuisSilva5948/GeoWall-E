@@ -218,7 +218,12 @@ namespace WinFormsUI
 
                     // Calcula el ángulo inicial y el ángulo de extensión basado en los puntos de inicio y finalización
                     float startAngle = (float)Math.Atan2(arc.InitialRayPoint.Y - arc.Center.Y, arc.InitialRayPoint.X - arc.Center.X) * 180 / (float)Math.PI;
-                    float sweepAngle = (float)Math.Atan2(arc.FinalRayPoint.Y - arc.Center.Y, arc.FinalRayPoint.X - arc.Center.X) * 180 / (float)Math.PI - startAngle;
+                    float endAngle = (float)Math.Atan2(arc.FinalRayPoint.Y - arc.Center.Y, arc.FinalRayPoint.X - arc.Center.X) * 180 / (float)Math.PI;
+
+                    if (startAngle > endAngle)
+                        endAngle += 360;
+                    float sweepAngle = endAngle - startAngle;
+                    sweepAngle = sweepAngle % 360;
 
                     // Dibuja el arco utilizando el método DrawArc
                     graphics.DrawArc(pen, x, y, diametro, diametro, startAngle, sweepAngle);

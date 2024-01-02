@@ -220,6 +220,10 @@ namespace GSharpInterpreter
             {
                 return ParseSequence();
             }
+            if (Match(TokenType.UNDEFINED))
+            {
+                return new Undefined();
+            }
             if (Match(TokenType.IDENTIFIER))
             {
                 Token id = Previous();

@@ -183,6 +183,10 @@ namespace GSharpInterpreter
     public class Undefined : Expression
     {
         public Undefined() { }
+        public override string ToString()
+        {
+            return "Undefined";
+        }
     }
 
     /// <summary>

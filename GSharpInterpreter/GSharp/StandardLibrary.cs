@@ -139,7 +139,7 @@ namespace GSharpInterpreter
         /// <returns></returns>
         public static FiniteSequence RandomPointSequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4, 25);
             List<Expression> points = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -152,7 +152,7 @@ namespace GSharpInterpreter
         /// </summary>
         public static FiniteSequence RandomLineSequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4, 25);
             List<Expression> lines = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -165,7 +165,7 @@ namespace GSharpInterpreter
         /// </summary>
         public static FiniteSequence RandomRaySequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4, 25);
             List<Expression> rays = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -178,7 +178,7 @@ namespace GSharpInterpreter
         /// </summary>
         public static FiniteSequence RandomSegmentSequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4, 25);
             List<Expression> segments = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -191,7 +191,7 @@ namespace GSharpInterpreter
         /// </summary>
         public static FiniteSequence RandomCircleSequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4 , 25);
             List<Expression> circles = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -205,7 +205,7 @@ namespace GSharpInterpreter
         /// <returns></returns>
         public static FiniteSequence RandomArcSequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4 , 25);
             List<Expression> arcs = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -218,7 +218,7 @@ namespace GSharpInterpreter
         /// </summary>
         public static FiniteSequence RandomNumberSequence()
         {
-            int amount = Random.Next(2, 20);
+            int amount = Random.Next(4, 25);
             List<Expression> numbers = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
@@ -302,6 +302,7 @@ namespace GSharpInterpreter
             {
                 // If the ray is vertical, X is the same as the X of the points.
                 // Y is a random number between the Y of the points.
+                
                 double y = Random.NextDouble() * Interpreter.UI.CanvasHeight * orientation + ray.P1.Y;
                 return new Point(ray.P1.X, y);
             }
@@ -371,24 +372,24 @@ namespace GSharpInterpreter
             if (arc.InitialRayPoint.Equals(arc.FinalRayPoint))
                 return RandomPointInCircle(new Circle(arc.Center, arc.Radius));
             // Get the angles of the initial and final rays respect to the x axis.
-            double startAngle = GetLineAngle(arc.Center, arc.InitialRayPoint);
-            double endAngle = GetLineAngle(arc.Center, arc.FinalRayPoint);
+            double startAngle = GetAngle(arc.Center, arc.InitialRayPoint);
+            double endAngle = GetAngle(arc.Center, arc.FinalRayPoint);
 
             if (startAngle > endAngle)
                 endAngle += 2 * Math.PI;
 
             double sweepAngle = endAngle - startAngle;
-            sweepAngle -= 2 * Math.PI;
+            sweepAngle %= 2 * Math.PI;
 
-            double angle = Random.NextDouble() * (sweepAngle) + startAngle;
+            double angle = Random.NextDouble() * sweepAngle + startAngle;
             double x = arc.Center.X + arc.Radius.Value * Math.Cos(angle);
             double y = arc.Center.Y + arc.Radius.Value * Math.Sin(angle);
             return new Point(x, y);
         }
         /// <summary>
-        /// Gets the angle of the line between two points in radians in relation to the x axis.
+        /// Gets the angle  in radians in relation to the x axis of the line that passes two given points.
         /// </summary>
-        public static double GetLineAngle(Point p1, Point p2)
+        public static double GetAngle(Point p1, Point p2)
         {
             if (p1.Equals(p2))
                 return 0;
@@ -402,7 +403,7 @@ namespace GSharpInterpreter
         /// </summary>
         public static double Orientation(Ray ray)
         {
-            return Slope(ray.P1, ray.P2) == 0 ? Math.Sign(ray.P2.X - ray.P1.X) : Math.Sign(ray.P2.Y - ray.P1.Y);
+            return Slope(ray.P1, ray.P2) <= 0 ? Math.Sign(ray.P2.X - ray.P1.X) : Math.Sign(ray.P2.Y - ray.P1.Y);
         }
 
 
@@ -456,23 +457,46 @@ namespace GSharpInterpreter
                 throw new GSharpError(ErrorType.COMPILING, "The points function expects exactly one argument.");
             if (arguments[0] is not GSharpFigure)
                 throw new GSharpError(ErrorType.COMPILING, "The points function expects a figure as argument.");
+            int amount = Random.Next(4, 25);
+            List<Expression> points = new List<Expression>();
             switch (arguments[0])
             {
                 case Segment segment:
-                    return RandomPointInSegment(segment);
+                    for (int i = 0; i < amount; i++)
+                    {
+                        points.Add(RandomPointInSegment(segment));
+                    }
+                    break;
                 case Ray ray:
-                    return RandomPointInRay(ray);
+                    for (int i = 0; i < amount; i++)
+                    {
+                        points.Add(RandomPointInRay(ray));
+                    }
+                    break;
                 case Line line:
-                    return RandomPointInLine(line);
+                    for (int i = 0; i < amount; i++)
+                    {
+                        points.Add(RandomPointInLine(line));
+                    }
+                    break;
                 case Point point:
-                    return point;
+                    points = new List<Expression>(){ point };
+                    break;
                 case Circle circle:
-                    return RandomPointInCircle(circle);
+                    for (int i = 0; i < amount; i++)
+                    {
+                        points.Add(RandomPointInCircle(circle));
+                    }
+                    break;
                 case Arc arc:
-                    return RandomPointInArc(arc);
-                default:
-                    throw new GSharpError(ErrorType.COMPILING, "The points function expects a figure as argument.");
+                    for (int i = 0; i < amount; i++)
+                    {
+                        points.Add(RandomPointInArc(arc));
+                    }
+                    break;
             }
+            return new FiniteSequence(points);
+            
         }
 
         /// <summary>

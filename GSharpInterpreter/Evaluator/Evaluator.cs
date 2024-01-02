@@ -202,6 +202,9 @@ namespace GSharpInterpreter
                 }
             }
             object expressionToDraw = Evaluate(draw.Expression);
+
+            if (expressionToDraw is Undefined)
+                return;
             if (expressionToDraw is FiniteSequence sequence)
             {
                 // Checking that all elements are figures of the same type
