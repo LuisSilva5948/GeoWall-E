@@ -1,12 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace GSharpInterpreter
 {
@@ -41,6 +34,7 @@ namespace GSharpInterpreter
             { "segment", Segment },
             { "circle", Circle },
             { "arc", Arc },
+            { "intersect", Intersect },
             { "randoms", Randoms },
             { "samples", Samples },
             { "points", Points }
@@ -496,9 +490,16 @@ namespace GSharpInterpreter
                     break;
             }
             return new FiniteSequence(points);
-            
         }
-
+        public static object Intersect(List<object> arguments)
+        {
+            if (arguments.Count != 2)
+                throw new GSharpError(ErrorType.COMPILING, "The intersect function expects exactly two arguments.");
+            if (arguments[0] is GSharpFigure && arguments[1] is GSharpFigure)
+                return Intersections.Intersect((GSharpFigure)arguments[0], (GSharpFigure)arguments[1]);
+            else
+                throw new GSharpError(ErrorType.COMPILING, "The intersect function expects two figures as arguments.");
+        }
         /// <summary>
         /// Returns the measure between two points.
         /// </summary>

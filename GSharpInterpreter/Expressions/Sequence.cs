@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace GSharpInterpreter
 {
@@ -17,7 +12,7 @@ namespace GSharpInterpreter
     /// </summary>
     public class FiniteSequence : Sequence, IEnumerable<Expression>
     {
-        public List<Expression> Elements { get; }
+        public List<Expression> Elements { get; private set; }
         public FiniteSequence(List<Expression> elements)
         {
             Elements = elements;

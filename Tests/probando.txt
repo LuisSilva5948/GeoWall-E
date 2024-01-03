@@ -1,0 +1,23 @@
+arc a;
+draw a "asdasd";
+
+mediatriz(p1, p2) = 
+let
+l1 = line(p1, p2);
+m = measure (p1, p2); 
+c1 = circle (p1, m); 
+c2 = circle (p2, m);
+i1,i2,_ = intersect(c1, c2); 
+l2 = line(i1, i2);
+in l2;
+puntoMedio(p11,p12)= 
+let
+medio,_ = intersect(line(p11,p12), mediatriz(p11,p12)); 
+in medio;
+
+point b;
+point c;
+draw b "b";
+draw c "c";
+color red;
+draw puntoMedio(b,c) "medio
