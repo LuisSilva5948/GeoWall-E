@@ -274,7 +274,7 @@ public static class Intersections
             intersections.Add(new Point(x1, y1));
             intersections.Add(new Point(x2, y2));
         }
-        return intersections;
+        return new FiniteSequence(intersections);
     }
     public static object Intersect(Line line, Arc arc)
     {
@@ -291,7 +291,7 @@ public static class Intersections
                     intersections.Remove(point);
                 }
             }
-            return intersections;
+            return new FiniteSequence(intersections);
         }
         else return new Undefined();
     }
@@ -592,7 +592,7 @@ public static class Intersections
 
 
     #region Auxiliary Methods
-    static double DistancePointLine(Point point, Line line)
+    public static double DistancePointLine(Point point, Line line)
     {
         double x1 = line.P1.X;
         double y1 = line.P1.Y;
@@ -604,7 +604,7 @@ public static class Intersections
         return Math.Abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1) / Math.Sqrt(Math.Pow(y2 - y1, 2) + Math.Pow(x2 - x1, 2));
     }
 
-    static (double, double) GetLineEquation(Line line)
+    public static (double, double) GetLineEquation(Line line)
     {
         double m = (line.P2.Y - line.P1.Y) / (line.P2.X - line.P1.X);
         double n = line.P1.Y - m * line.P1.X;
@@ -627,7 +627,7 @@ public static class Intersections
 
         return false;
     }
-    static bool IsInArc(Point point, Arc arc)
+    public static bool IsInArc(Point point, Arc arc)
     {
         double pointAngle = Math.Atan2(point.Y - arc.Center.Y, point.Y - arc.Center.X);
         double startAngle = Math.Atan2(arc.InitialRayPoint.Y - arc.Center.Y, arc.InitialRayPoint.X - arc.Center.X);
@@ -643,7 +643,7 @@ public static class Intersections
         }
     }
 
-    static bool IsInSegment(Point point, Segment segment)
+    public static bool IsInSegment(Point point, Segment segment)
     {
         double minX = Math.Min(segment.P1.X, segment.P2.X);
         double maxX = Math.Max(segment.P1.X, segment.P2.X);
