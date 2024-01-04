@@ -216,7 +216,7 @@ namespace GSharpInterpreter
             List<Expression> numbers = new List<Expression>();
             for (int i = 0; i < amount; i++)
             {
-                numbers.Add(new LiteralExpression(Random.NextDouble()));
+                numbers.Add(new GSharpNumber(Random.NextDouble()));
             }
             return new FiniteSequence(numbers);
         }
@@ -401,6 +401,7 @@ namespace GSharpInterpreter
         }
 
 
+
         #endregion
 
         #region Predefined G# Functions
@@ -411,18 +412,20 @@ namespace GSharpInterpreter
         public static object Count(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new GSharpError(ErrorType.COMPILING, "The count function expects exactly one argument.");
-            if (arguments[0] is FiniteSequence)
-                return ((FiniteSequence)arguments[0]).Count;
-            if (arguments[0] is RangeSequence)
-            {
-                return ((RangeSequence)arguments[0]).Count;
-            }
-            if (arguments[0] is InfiniteSequence)
+                throw new GSharpError(ErrorType.SEMANTIC, "The count function expects exactly one argument.");
+            if (arguments[0] is Undefined)
             {
                 return new Undefined();
             }
-            else throw new GSharpError(ErrorType.COMPILING, "The count function expects a sequence as argument.");
+            if (arguments[0] is Sequence sequence)
+            {
+                double count = sequence.Count;
+                if (double.IsPositiveInfinity(count))
+                    return new Undefined();
+                else
+                    return new GSharpNumber(count);
+            }
+            else throw new GSharpError(ErrorType.SEMANTIC, "The count function expects a sequence as argument.");
         }
         /// <summary>
         /// Returns the random sequence of numbers between 0 and 1 generated at the beginning of the program.
@@ -430,7 +433,7 @@ namespace GSharpInterpreter
         public static object Randoms(List<object> arguments)
         {
             if (arguments.Count != 0)
-                throw new GSharpError(ErrorType.COMPILING, "The randoms function doesn't expect any arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The randoms function doesn't expect any arguments.");
             return RandomNumericSequence;
         }
         /// <summary>
@@ -439,7 +442,7 @@ namespace GSharpInterpreter
         public static object Samples(List<object> arguments)
         {
             if (arguments.Count != 0)
-                throw new GSharpError(ErrorType.COMPILING, "The samples function doesn't expect any arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The samples function doesn't expect any arguments.");
             return RandomPointSequence();
         }
         /// <summary>
@@ -448,9 +451,9 @@ namespace GSharpInterpreter
         public static object Points(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new GSharpError(ErrorType.COMPILING, "The points function expects exactly one argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The points function expects exactly one argument.");
             if (arguments[0] is not GSharpFigure)
-                throw new GSharpError(ErrorType.COMPILING, "The points function expects a figure as argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The points function expects a figure as argument.");
             int amount = Random.Next(4, 25);
             List<Expression> points = new List<Expression>();
             switch (arguments[0])
@@ -494,11 +497,11 @@ namespace GSharpInterpreter
         public static object Intersect(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The intersect function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The intersect function expects exactly two arguments.");
             if (arguments[0] is GSharpFigure && arguments[1] is GSharpFigure)
                 return Intersections.Intersect((GSharpFigure)arguments[0], (GSharpFigure)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The intersect function expects two figures as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The intersect function expects two figures as arguments.");
         }
         /// <summary>
         /// Returns the measure between two points.
@@ -506,11 +509,11 @@ namespace GSharpInterpreter
         public static Measure Measure(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The measure function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The measure function expects exactly two arguments.");
             if (arguments[0] is Point && arguments[1] is Point)
             return new Measure(Distance((Point)arguments[0], (Point)arguments[1]));
             else
-                throw new GSharpError(ErrorType.COMPILING, "The measure function expects two points as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The measure function expects two points as arguments.");
         }
         /// <summary>
         /// Returns a point with the given coordinates.
@@ -518,11 +521,11 @@ namespace GSharpInterpreter
         public static Point Point(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The point function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The point function expects exactly two arguments.");
             if (arguments[0] is double && arguments[1] is double)
                 return new Point((double)arguments[0], (double)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The point function expects two numeric arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The point function expects two numeric arguments.");
         }
         /// <summary>
         /// Returns a line that passes through the given points.
@@ -530,11 +533,11 @@ namespace GSharpInterpreter
         public static Line Line(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The line function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The line function expects exactly two arguments.");
             if (arguments[0] is Point && arguments[1] is Point)
                 return new Line((Point)arguments[0], (Point)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The line function expects two points as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The line function expects two points as arguments.");
         }
         /// <summary>
         /// Returns a ray that starts at the first point and passes through the second point.
@@ -542,11 +545,11 @@ namespace GSharpInterpreter
         public static Ray Ray(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The ray function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The ray function expects exactly two arguments.");
             if (arguments[0] is Point && arguments[1] is Point)
                 return new Ray((Point)arguments[0], (Point)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The ray function expects two points as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The ray function expects two points as arguments.");
         }
         /// <summary>
         /// Returns a segment that starts at the first point and ends at the second point.
@@ -554,11 +557,11 @@ namespace GSharpInterpreter
         public static Segment Segment(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The segment function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The segment function expects exactly two arguments.");
             if (arguments[0] is Point && arguments[1] is Point)
                 return new Segment((Point)arguments[0], (Point)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The segment function expects two points as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The segment function expects two points as arguments.");
         }
         /// <summary>
         /// Returns a circle with the given center and radius.
@@ -566,11 +569,11 @@ namespace GSharpInterpreter
         public static Circle Circle(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The circle function expects exactly two arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The circle function expects exactly two arguments.");
             if (arguments[0] is Point && arguments[1] is Measure)
                 return new Circle((Point)arguments[0], (Measure)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The circle function expects a point and a measure as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The circle function expects a point and a measure as arguments.");
         }
         /// <summary>
         /// Returns an arc with the given center, radius, and two points.
@@ -578,11 +581,11 @@ namespace GSharpInterpreter
         public static Arc Arc(List<object> arguments)
         {
             if (arguments.Count != 4)
-                throw new GSharpError(ErrorType.COMPILING, "The arc function expects exactly four arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The arc function expects exactly four arguments.");
             if (arguments[0] is Point && arguments[1] is Point && arguments[2] is Point && arguments[3] is Measure)
                 return new Arc((Point)arguments[0], (Measure)arguments[3], (Point)arguments[2], (Point)arguments[1]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The arc function expects three points and a measure as arguments.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The arc function expects three points and a measure as arguments.");
         }
 
 
@@ -595,11 +598,11 @@ namespace GSharpInterpreter
         public static object Sqrt(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new GSharpError(ErrorType.COMPILING, "The sqrt function expects exactly one argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The sqrt function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Sqrt((double)arguments[0]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The sqrt function expects a numeric argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The sqrt function expects a numeric argument.");
         }
         /// <summary>
         /// Sine function.
@@ -607,11 +610,11 @@ namespace GSharpInterpreter
         public static object Sin(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new GSharpError(ErrorType.COMPILING, "The sin function expects exactly one argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The sin function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Sin((double)arguments[0]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The sin function expects a numeric argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The sin function expects a numeric argument.");
         }
         /// <summary>
         /// Cosine function.
@@ -619,11 +622,11 @@ namespace GSharpInterpreter
         public static object Cos(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new GSharpError(ErrorType.COMPILING, "The cos function expects exactly one argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The cos function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Cos((double)arguments[0]);
             else
-                throw new GSharpError(ErrorType.COMPILING, "The cos function expects a numeric argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The cos function expects a numeric argument.");
         }
         /// <summary>
         /// Logarithm function.
@@ -631,16 +634,16 @@ namespace GSharpInterpreter
         public static object Log(List<object> arguments)
         {
             if (arguments.Count != 2)
-                throw new GSharpError(ErrorType.COMPILING, "The log function expects exactly one argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The log function expects exactly one argument.");
             if (arguments[0] is double a && arguments[1] is double b)
             {
                 if (a > 0 && b > 0 && b != 1)
                     return Math.Log(a, b);
                 else
-                    throw new GSharpError(ErrorType.COMPILING, "The log function was called with invalid arguments.");
+                    throw new GSharpError(ErrorType.SEMANTIC, "The log function was called with invalid arguments.");
             }
             else
-                throw new GSharpError(ErrorType.COMPILING, "The log function expects a numeric argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The log function expects a numeric argument.");
         }
         /// <summary>
         /// Exponential function.
@@ -648,11 +651,11 @@ namespace GSharpInterpreter
         public static object Exp(List<object> arguments)
         {
             if (arguments.Count != 1)
-                throw new GSharpError(ErrorType.COMPILING, "The exp function expects exactly one argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The exp function expects exactly one argument.");
             if (arguments[0] is double)
                 return Math.Exp((double)arguments[0]);
             else 
-                throw new GSharpError(ErrorType.COMPILING, "The exp function expects a numeric argument.");
+                throw new GSharpError(ErrorType.SEMANTIC, "The exp function expects a numeric argument.");
         }
 
 

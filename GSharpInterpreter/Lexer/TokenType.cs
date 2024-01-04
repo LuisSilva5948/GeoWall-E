@@ -30,7 +30,6 @@ namespace GSharpInterpreter
         // Data Types
         NUMBER,         // Represents a numeric value
         STRING,         // Represents a string value
-        BOOLEAN,        // Represents a boolean value
         SEQUENCE,       // Represents a sequence of values
         UNDEFINED,      // Represents an undefined value
 

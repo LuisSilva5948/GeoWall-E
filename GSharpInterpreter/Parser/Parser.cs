@@ -206,9 +206,13 @@ namespace GSharpInterpreter
         /// </summary>
         private Expression ParsePrimary()
         {
-            if (Match(TokenType.BOOLEAN, TokenType.NUMBER, TokenType.STRING))
+            if (Match(TokenType.NUMBER))
             {
-                return new LiteralExpression(Previous().Literal);
+                return new GSharpNumber((double)Previous().Literal);
+            }
+            if (Match(TokenType.STRING))
+            {
+                return new GSharpString((string)Previous().Literal);
             }
             if (Match(TokenType.LEFT_PAREN))
             {
@@ -241,7 +245,7 @@ namespace GSharpInterpreter
                 Consume(TokenType.LEFT_PAREN, $"Expected '(' after '{function}'.");
                 return FunctionCall(function);
             }
-            throw new GSharpError(ErrorType.COMPILING, $"Expected valid expression after '{Previous().Lexeme}'.", CurrentLine);
+            throw new GSharpError(ErrorType.SYNTAX, $"Expected valid expression after '{Previous().Lexeme}'.", CurrentLine);
         }
 
         /// <summary>
@@ -324,7 +328,7 @@ namespace GSharpInterpreter
                 foreach (Expression argument in arguments)
                 {
                     if (argument is not ConstantExpression parameter)
-                        throw new GSharpError(ErrorType.COMPILING, "Expected valid variable names as parameters in function declaration.", CurrentLine);
+                        throw new GSharpError(ErrorType.SYNTAX, "Expected valid variable names as parameters in function declaration.", CurrentLine);
                 }
                 return FunctionDeclaration(id, arguments);
             }
@@ -337,7 +341,7 @@ namespace GSharpInterpreter
         {
             // Check if function is being declared inside another function
             if (IsFunctionDeclaration)
-                throw new GSharpError(ErrorType.COMPILING, "Function declarations cannot be nested.", CurrentLine);
+                throw new GSharpError(ErrorType.SYNTAX, "Function declarations cannot be nested.", CurrentLine);
             // Set flag to true to not parse another FunctionDeclaration inside this one 
             IsFunctionDeclaration = true;
 
@@ -346,9 +350,9 @@ namespace GSharpInterpreter
             foreach (Expression argument in arguments)
             {
                 if (argument is not ConstantExpression parameter)
-                    throw new GSharpError(ErrorType.COMPILING, "Expected valid variable name as parameter in function declaration.", CurrentLine);
+                    throw new GSharpError(ErrorType.SYNTAX, "Expected valid variable name as parameter in function declaration.", CurrentLine);
                 if (parameters.Contains(parameter))
-                    throw new GSharpError(ErrorType.COMPILING, $"Parameter name '{parameter.ID}' cannot be used more than once.", CurrentLine);
+                    throw new GSharpError(ErrorType.SYNTAX, $"Parameter name '{parameter.ID}' cannot be used more than once.", CurrentLine);
                 parameters.Add(parameter);
             }
             try
@@ -360,7 +364,7 @@ namespace GSharpInterpreter
             catch (GSharpError e)
             {
                 Errors.Add(e);
-                throw new GSharpError(ErrorType.COMPILING, $"Invalid declaration of function '{id}'.", CurrentLine);
+                throw new GSharpError(ErrorType.SYNTAX, $"Invalid declaration of function '{id}'.", CurrentLine);
             }
         }
         /// <summary>
@@ -373,15 +377,19 @@ namespace GSharpInterpreter
             {
                 Expression sequence;
                 double start = (double)Advance().Literal;
+                if (start%1 != 0 || start < 0)
+                    throw new GSharpError(ErrorType.SYNTAX, "Ranged and infinite sequences can only be used with integers.", CurrentLine);
                 Consume(TokenType.DOTS, "Expected '...' after number.");
                 if (Match(TokenType.NUMBER))
                 {
                     double end = (double)Previous().Literal;
-                    sequence = new RangeSequence(start, end);
+                    if (end%1 != 0 || end < 0)
+                        throw new GSharpError(ErrorType.SYNTAX, "Ranged sequences can only be used with integers.", CurrentLine);
+                    sequence = new RangeSequence(new GSharpNumber(start), new GSharpNumber(end));
                 }
                 else
                 {
-                    sequence = new InfiniteSequence(start);
+                    sequence = new InfiniteSequence(new GSharpNumber(start));
                 }
                 Consume(TokenType.RIGHT_BRACE, $"Expected '}}' in sequence after {Previous().Lexeme}.");
                 return sequence;
@@ -453,7 +461,7 @@ namespace GSharpInterpreter
         private Expression ParseImport()
         {
             if (!ImportCanBeParsed)
-                throw new GSharpError(ErrorType.COMPILING, "Import statements can only be used at the beginning of the file.", CurrentLine);
+                throw new GSharpError(ErrorType.SYNTAX, "Import statements can only be used at the beginning of the file.", CurrentLine);
             string id = Consume(TokenType.STRING, "Expected a string after 'import'.").Literal.ToString();
             return new ImportStatement(id);
         }
@@ -502,7 +510,7 @@ namespace GSharpInterpreter
                 case "gray":
                     return new ColorStatement(GSharpColor.GRAY);
                 default:
-                    throw new GSharpError(ErrorType.COMPILING, $"Invalid color '{color}'.", CurrentLine);
+                    throw new GSharpError(ErrorType.SYNTAX, $"Invalid color '{color}'.", CurrentLine);
             }
         }
 
@@ -595,7 +603,7 @@ namespace GSharpInterpreter
             if (Check(type))
                 return Advance();
 
-            throw new GSharpError(ErrorType.COMPILING, message, CurrentLine);
+            throw new GSharpError(ErrorType.SYNTAX, message, CurrentLine);
         }
         /// <summary>
         /// If an error occurs, synchronizes the parser by skipping tokens until it finds a semicolon.

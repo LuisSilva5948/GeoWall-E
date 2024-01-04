@@ -46,7 +46,7 @@ namespace GSharpInterpreter
         {
             if (identifier == "_") return;
             if (ExistsIdentifier(identifier))
-                throw new GSharpError(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Another constant named '{identifier}' already exists and can't be altered.");
             Constants.Peek()[identifier] = value;
         }
         public object GetValue(string identifier)
@@ -56,7 +56,7 @@ namespace GSharpInterpreter
             else if (Constants.Peek().ContainsKey(identifier))
                 return Constants.Peek()[identifier];
             else
-                throw new GSharpError(ErrorType.COMPILING, $"Constant '{identifier}' doesn't exist.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Constant '{identifier}' doesn't exist.");
         }
         /// <summary>
         /// Sets the argument with the given identifier to the given value in the current scope.
@@ -78,7 +78,7 @@ namespace GSharpInterpreter
         public void Reserve(string identifier)
         {
             if (ExistsIdentifier(identifier))
-                throw new GSharpError(ErrorType.COMPILING, $"Another constant named '{identifier}' already exists and can't be altered.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Another constant named '{identifier}' already exists and can't be altered.");
             SetArgument(identifier, new Undefined());
         }
         /// <summary>
@@ -115,7 +115,7 @@ namespace GSharpInterpreter
         {
             if (StandardLibrary.PredefinedFunctions.ContainsKey(function.Identifier) || Functions.Peek().ContainsKey(function.Identifier))
             {
-                throw new GSharpError(ErrorType.COMPILING, $"Function '{function.Identifier}' already exists and can't be redeclared.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Function '{function.Identifier}' already exists and can't be redeclared.");
             }
             else Functions.Peek().Add(function.Identifier, function);
         }
@@ -127,7 +127,7 @@ namespace GSharpInterpreter
             if (Functions.Peek().ContainsKey(identifier))
                 return Functions.Peek()[identifier];
             else
-                throw new GSharpError(ErrorType.COMPILING, $"Function '{identifier}' doesn't exist.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Function '{identifier}' doesn't exist.");
         }
         /// <summary>
         /// Sets the color of the drawing.

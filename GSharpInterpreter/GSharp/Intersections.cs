@@ -1,6 +1,6 @@
 ﻿using GSharpInterpreter;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Numerics;
 
 public static class Intersections
 {
@@ -200,14 +200,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections)
             {
-                if (!IsInSegment((Point)point, segment))
+                if (IsInSegment((Point)point, segment))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         // Line and segment overlap
         else return new Undefined();
@@ -221,14 +222,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections.ToList())
             {
-                if (!IsInRay((Point)point, ray))
+                if (IsInRay((Point)point, ray))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         // Line and ray overlap
         else return new Undefined();
@@ -284,16 +286,17 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections)
             {
-                if (!IsInArc((Point)point, arc))
+                if (IsInArc((Point)point, arc))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
-        else return new Undefined();
+        else return new FiniteSequence(new List<Expression>());
     }
     #endregion
 
@@ -315,14 +318,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections.ToList())
             {
-                if (!IsInRay((Point)point, ray1) || !IsInRay((Point)point, ray2))
+                if (IsInRay((Point)point, ray1) && IsInRay((Point)point, ray2))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         // Rays overlap
         else return new Undefined();
@@ -336,14 +340,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections.ToList())
             {
-                if (!IsInRay((Point)point, ray))
+                if (IsInRay((Point)point, ray))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         else return new FiniteSequence(new List<Expression>());
     }
@@ -356,14 +361,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections)
             {
-                if (!IsInRay((Point)point, rayo))
+                if (IsInRay((Point)point, rayo))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         else return new FiniteSequence(new List<Expression>());
     }
@@ -375,14 +381,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections)
             {
-                if (!IsInRay((Point)point, ray))
+                if (IsInRay((Point)point, ray))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         else return new FiniteSequence(new List<Expression>());
     }
@@ -411,14 +418,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections.ToList())
             {
-                if (!IsInSegment((Point)point, segment1) || !IsInSegment((Point)point, segment2))
+                if (IsInSegment((Point)point, segment1) && IsInSegment((Point)point, segment2))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         // Segments overlap
         else return new Undefined();
@@ -432,14 +440,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections.ToList())
             {
-                if (!IsInSegment((Point)point, segment))
+                if (IsInSegment((Point)point, segment))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         else return new FiniteSequence(new List<Expression>());
     }
@@ -451,14 +460,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersections)
             {
-                if (!IsInArc((Point)point, arc))
+                if (IsInArc((Point)point, arc))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         else return new FiniteSequence(new List<Expression>());
     }
@@ -533,15 +543,16 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)possibleIntersections;
             List<Expression> intersections = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             // Remove intersections that are not in the arc
             foreach (var point in intersections)
             {
-                if (!IsInArc((Point)point, arc))
+                if (IsInArc((Point)point, arc))
                 {
-                    intersections.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersections);
+            return new FiniteSequence(validintersections);
         }
         // Circle and arc overlap
         else return new Undefined();
@@ -577,14 +588,15 @@ public static class Intersections
         {
             FiniteSequence seq = (FiniteSequence)posibleInterseccion;
             List<Expression> intersecciones = seq.GetElements();
+            List<Expression> validintersections = new List<Expression>();
             foreach (var point in intersecciones)
             {
-                if (!IsInArc((Point)point, arc1) || !IsInArc((Point)point, arc2))
+                if (IsInArc((Point)point, arc1) && IsInArc((Point)point, arc2))
                 {
-                    intersecciones.Remove(point);
+                    validintersections.Add(point);
                 }
             }
-            return new FiniteSequence(intersecciones);
+            return new FiniteSequence(validintersections);
         }
         else return new Undefined();
     }
@@ -629,17 +641,36 @@ public static class Intersections
     }
     public static bool IsInArc(Point point, Arc arc)
     {
-        double pointAngle = Math.Atan2(point.Y - arc.Center.Y, point.Y - arc.Center.X);
-        double startAngle = Math.Atan2(arc.InitialRayPoint.Y - arc.Center.Y, arc.InitialRayPoint.X - arc.Center.X);
-        double endAngle = Math.Atan2(arc.FinalRayPoint.Y - arc.Center.Y, arc.FinalRayPoint.X - arc.Center.X);
+        Vector2 centerToPoint = new Vector2((float)(point.X - arc.Center.X), (float)(point.Y - arc.Center.Y));
+        Vector2 initialRay = new Vector2((float)(arc.InitialRayPoint.X - arc.Center.X), (float)(arc.InitialRayPoint.Y - arc.Center.Y));
+        Vector2 finalRay = new Vector2((float)(arc.FinalRayPoint.X - arc.Center.X), (float)(arc.FinalRayPoint.Y - arc.Center.Y));
 
-        if (startAngle < endAngle)
+        float angleToPoint = MathF.Atan2(centerToPoint.Y, centerToPoint.X);
+        float angleToInitialRay = MathF.Atan2(initialRay.Y, initialRay.X);
+        float angleToFinalRay = MathF.Atan2(finalRay.Y, finalRay.X);
+
+        // Adjust angles to be between 0 and 2*PI
+        if (angleToInitialRay < 0)
         {
-            return startAngle <= pointAngle && pointAngle <= endAngle;
+            angleToInitialRay += 2 * MathF.PI;
+        }
+        if (angleToFinalRay < 0)
+        {
+            angleToFinalRay += 2 * MathF.PI;
+        }
+        if (angleToPoint < 0)
+        {
+            angleToPoint += 2 * MathF.PI;
+        }
+
+        // Verify if the point is between the initial and final rays
+        if (angleToInitialRay < angleToFinalRay)
+        {
+            return angleToInitialRay <= angleToPoint && angleToPoint <= angleToFinalRay;
         }
         else
         {
-            return startAngle <= pointAngle || pointAngle <= endAngle;
+            return angleToInitialRay <= angleToPoint || angleToPoint <= angleToFinalRay;
         }
     }
 

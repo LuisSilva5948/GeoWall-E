@@ -40,7 +40,9 @@ namespace GSharpInterpreter
     /// </summary>
     public enum ErrorType
     {
-        COMPILING,  // Compiling errors occur when the interpreter encounters an invalid statement
+        LEXICAL,    // Lexical errors occur when the lexer encounters an invalid character
+        SYNTAX,     // Syntax errors occur when the parser encounters an invalid expression
+        SEMANTIC,   // Semantic errors occur when the evaluator encounters an invalid expression
         RUNTIME     // Runtime errors occur when the evaluator encounters an invalid operation
     }
 }

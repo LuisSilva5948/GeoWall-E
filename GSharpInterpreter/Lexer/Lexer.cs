@@ -103,7 +103,7 @@ namespace GSharpInterpreter
                     {
                         ScanIdentifier();
                     }
-                    else throw new GSharpError(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
+                    else throw new GSharpError(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
                     break;
             }
         }
@@ -133,7 +133,7 @@ namespace GSharpInterpreter
                 }
             }
             if (isinvalidnumber)
-                throw new GSharpError(ErrorType.COMPILING, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
+                throw new GSharpError(ErrorType.LEXICAL, $"Invalid token at '{GetLexeme()}'.", CurrentLine);
             else
             AddToken(TokenType.NUMBER, double.Parse(GetLexeme()));
         }
@@ -171,9 +171,6 @@ namespace GSharpInterpreter
                 case "measure": AddToken(TokenType.MEASURE, lexeme); break;
                 case "undefined": AddToken(TokenType.UNDEFINED, lexeme); break;
                 case "sequence": AddToken(TokenType.SEQUENCE, lexeme); break;
-                case "true":
-                case "false":
-                    AddToken(TokenType.BOOLEAN, bool.Parse(lexeme)); break;
                 case "PI": AddToken(TokenType.NUMBER, Math.PI); break;
                 case "E": AddToken(TokenType.NUMBER, Math.E); break;
                 default:
@@ -190,7 +187,7 @@ namespace GSharpInterpreter
             {
                 if (IsAtEnd())
                 {
-                    throw new GSharpError(ErrorType.COMPILING, "Unfinished string.", CurrentLine);
+                    throw new GSharpError(ErrorType.LEXICAL, "Unfinished string.", CurrentLine);
                 }
                 Advance();
             }

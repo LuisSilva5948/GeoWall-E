@@ -84,8 +84,10 @@ namespace GSharpInterpreter
                     EvaluateImport(import);
                     return "Imported";
 
-                case LiteralExpression literal:
-                    return literal.Value;
+                case GSharpNumber number:
+                    return number.Value;
+                case GSharpString str:
+                    return str.Value;
                 case UnaryExpression unary:
                     return EvaluateUnary(unary.Operator, Evaluate(unary.Right));
                 case BinaryExpression binary:
@@ -127,10 +129,10 @@ namespace GSharpInterpreter
             string extension = Path.GetExtension(path);
             // Check if the file is a .txt, .geo or .gs file
             if (!(extension == ".txt" || extension == ".geo" || extension == ".gs"))
-                throw new GSharpError(ErrorType.COMPILING, $"File '{path}' must be a .txt, .geo or .gs file.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"File '{path}' must be a .txt, .geo or .gs file.");
             // Check if the file exists
             if (!File.Exists(path))
-                throw new GSharpError(ErrorType.COMPILING, $"File '{path}' doesn't exist.");
+                throw new GSharpError(ErrorType.SEMANTIC, $"File '{path}' doesn't exist.");
             // Read the file
             string code = File.ReadAllText(path);
             // Add its contents to the current scope
@@ -139,7 +141,7 @@ namespace GSharpInterpreter
             if (lexer.Errors.Count > 0)
             {
                 foreach (GSharpError error in lexer.Errors)
-                    Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
+                    Errors.Add(new GSharpError(ErrorType.SEMANTIC, $"Error importing file '{path}': {error.Message}"));
                 return;
             }
             Parser parser = new Parser(tokens);
@@ -147,7 +149,7 @@ namespace GSharpInterpreter
             if (parser.Errors.Count > 0)
             {
                 foreach (GSharpError error in parser.Errors)
-                    Errors.Add(new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}"));
+                    Errors.Add(new GSharpError(ErrorType.SEMANTIC, $"Error importing file '{path}': {error.Message}"));
                 return;
             }
             try
@@ -157,11 +159,11 @@ namespace GSharpInterpreter
             }
             catch (GSharpError error)
             {
-                throw new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {error.Message}");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Error importing file '{path}': {error.Message}");
             }
             catch (Exception e)
             {
-                throw new GSharpError(ErrorType.COMPILING, $"Error importing file '{path}': {e.Message}");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Error importing file '{path}': {e.Message}");
             }
         }
         private void EvaluatePrint(PrintStatement print)
@@ -211,7 +213,7 @@ namespace GSharpInterpreter
                 foreach (Expression element in sequence.GetElements())
                 {
                     if (Evaluate(element) is not GSharpFigure)
-                        throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
+                        throw new GSharpError(ErrorType.SEMANTIC, "Draw expression must be a sequence of figures of the same type or a figure.");
                 }
                 foreach (Expression element in sequence.GetElements())
                 {
@@ -222,7 +224,7 @@ namespace GSharpInterpreter
             {
                 DrawFigure(figure, label);
             }
-            else throw new GSharpError(ErrorType.COMPILING, "Draw expression must be a sequence of figures of the same type or a figure.");
+            else throw new GSharpError(ErrorType.SEMANTIC, "Draw expression must be a sequence of figures of the same type or a figure.");
         }
 
         private void EvaluateFunction(Function function)
@@ -231,9 +233,9 @@ namespace GSharpInterpreter
             foreach (ConstantExpression parameter in function.Parameters)
             {
                 if (parameter.ID == "_")
-                    throw new GSharpError(ErrorType.COMPILING, "Function parameters can't be named '_'.");
+                    throw new GSharpError(ErrorType.SEMANTIC, "Function parameters can't be named '_'.");
                 if (Scope.ExistsIdentifier(parameter.ID))
-                    throw new GSharpError(ErrorType.COMPILING, $"Another identifier named '{parameter.ID}' already exists and can't be altered.");
+                    throw new GSharpError(ErrorType.SEMANTIC, $"Another identifier named '{parameter.ID}' already exists and can't be altered.");
             }
             // Reserve the parameters in the scope
             foreach (ConstantExpression parameter in function.Parameters)
@@ -248,8 +250,8 @@ namespace GSharpInterpreter
         {
             List<string> variables = multipleAssignment.IDs;
             object sequence = Evaluate(multipleAssignment.Sequence);
-            if (sequence is not Sequence)
-                throw new GSharpError(ErrorType.COMPILING, "Multiple assignment can only be done to sequences.");
+            if (sequence is not Sequence && sequence is not Undefined)
+                throw new GSharpError(ErrorType.SEMANTIC, "Multiple assignment can only be done to sequences.");
             if (sequence is FiniteSequence finiteSequence)
             {
                 // Get the elements of the sequence
@@ -273,7 +275,7 @@ namespace GSharpInterpreter
             else if (sequence is InfiniteSequence infiniteSequence)
             {
                 // Get the enumerator of the sequence
-                IEnumerator<double> enumerator = infiniteSequence.GetEnumerator();
+                IEnumerator<Expression> enumerator = infiniteSequence.GetEnumerator();
                 // Iterate through the variables except the last one
                 for (int i = 0; i < variables.Count - 1; i++)
                 {
@@ -281,24 +283,38 @@ namespace GSharpInterpreter
                     Scope.SetConstant(variables[i], enumerator.Current);
                 }
                 // The last variable gets the rest of the sequence
-                Scope.SetConstant(variables[variables.Count - 1], new InfiniteSequence(enumerator.Current));
+                enumerator.MoveNext();
+                Scope.SetConstant(variables[variables.Count - 1], new InfiniteSequence((GSharpNumber)enumerator.Current));
             }
             else if (sequence is RangeSequence rangeSequence)
             {
                 // Get the enumerator of the sequence
-                IEnumerator<double> enumerator = rangeSequence.GetEnumerator();
+                IEnumerator<Expression> enumerator = rangeSequence.GetEnumerator();
                 // Iterate through the variables except the last one
                 for (int i = 0; i < variables.Count - 1; i++)
                 {
                     // If there are no more elements, the variable gets an undefined value
-                    if (rangeSequence.Count == 0)
-                        Scope.SetConstant(variables[i], new Undefined());
-                    else if (enumerator.MoveNext())
-                    Scope.SetConstant(variables[i], enumerator.Current);
+                    if (enumerator.MoveNext())
+                    {
+                        Scope.SetConstant(variables[i], enumerator.Current);
+                    }
+                    else Scope.SetConstant(variables[i], new Undefined());
                 }
                 // The last variable gets the rest of the sequence
-                Scope.SetConstant(variables[variables.Count - 1], new RangeSequence(enumerator.Current, rangeSequence.End));
+                // If there are more elements, the variable gets the rest of the sequence
+                if (enumerator.MoveNext())
+                {
+                    if (enumerator.Current is not GSharpNumber)
+                        throw new GSharpError(ErrorType.SEMANTIC, "Range sequence must be of numbers.");
+                    Scope.SetConstant(variables[variables.Count - 1], new RangeSequence((GSharpNumber)enumerator.Current, rangeSequence.End));
+                }
+                // If there are no more elements, the variable gets an empty sequence
+                else Scope.SetConstant(variables[variables.Count - 1], new FiniteSequence(new List<Expression>()));
             }
+            else foreach (string variable in variables)
+                {
+                    Scope.SetConstant(variable, new Undefined());
+                }
         }
 
 
@@ -309,7 +325,7 @@ namespace GSharpInterpreter
         /// <param name="Operator">The binary operator.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>The result of the binary operation.</returns>
-        public object EvaluateBinary(object left, Token Operator, object right)
+        /*public object EvaluateBinary(object left, Token Operator, object right)
         {
             switch (Operator.Type)
             {
@@ -338,6 +354,74 @@ namespace GSharpInterpreter
                     if ((double)right != 0)
                         return (double)left / (double)right;
                     throw new GSharpError(ErrorType.COMPILING, "Division by zero is undefined.");
+                case TokenType.MODULO:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left % (double)right;
+                case TokenType.POWER:
+                    CheckNumbers(Operator, left, right);
+                    return Math.Pow((double)left, (double)right);
+                case TokenType.GREATER:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left > (double)right;
+                case TokenType.GREATER_EQUAL:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left >= (double)right;
+                case TokenType.LESS:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left < (double)right;
+                case TokenType.LESS_EQUAL:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left <= (double)right;
+
+                case TokenType.EQUAL:
+                    return IsEqual(left, right);
+                case TokenType.NOT_EQUAL:
+                    return !IsEqual(left, right);
+
+                case TokenType.AND:
+                    CheckBooleans(Operator, left, right);
+                    return (bool)left && (bool)right;
+                case TokenType.OR:
+                    CheckBooleans(Operator, left, right);
+                    return (bool)left || (bool)right;
+
+                default:
+                    return null;
+            }
+        }*/
+        public object EvaluateBinary(object left, Token Operator, object right)
+        {
+            switch (Operator.Type)
+            {
+                case TokenType.ADDITION:
+                    if (left is Sequence leftSequence && right is Sequence rightSequence)
+                    {
+                        return leftSequence + rightSequence;
+                    }
+                    try
+                    {
+                        CheckNumbers(Operator, left, right);
+                    }
+                    catch (GSharpError)
+                    {
+                        if (left is string || right is string)
+                            return left.ToString() + right.ToString();
+                        throw new GSharpError(ErrorType.SEMANTIC, $"Operands must be Numbers or Strings in '{Operator.Lexeme}' operation.");
+                    }
+                    return (double)left + (double)right;
+
+
+                case TokenType.SUBSTRACTION:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left - (double)right;
+                case TokenType.MULTIPLICATION:
+                    CheckNumbers(Operator, left, right);
+                    return (double)left * (double)right;
+                case TokenType.DIVISION:
+                    CheckNumbers(Operator, left, right);
+                    if ((double)right != 0)
+                        return (double)left / (double)right;
+                    throw new GSharpError(ErrorType.SEMANTIC, "Division by zero is undefined.");
                 case TokenType.MODULO:
                     CheckNumbers(Operator, left, right);
                     return (double)left % (double)right;
@@ -430,7 +514,7 @@ namespace GSharpInterpreter
         {
             object condition = Evaluate(ifElse.Condition);
             if (!IsBoolean(condition))
-                throw new GSharpError(ErrorType.COMPILING, "Condition in 'If-Else' expression must be a boolean expression.");
+                throw new GSharpError(ErrorType.SEMANTIC, "Condition in 'If-Else' expression must be a boolean expression.");
             return (bool)condition ? Evaluate(ifElse.ThenBranch) : Evaluate(ifElse.ElseBranch);
         }
         /// <summary>
@@ -454,7 +538,7 @@ namespace GSharpInterpreter
             Function function = Scope.GetFunction(call.Identifier);
             // Check the amount of arguments of the function vs the arguments passed
             if (arguments.Count != function.Parameters.Count)
-                throw new GSharpError(ErrorType.COMPILING, $"Function '{call.Identifier}' receives '{arguments.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
+                throw new GSharpError(ErrorType.SEMANTIC, $"Function '{call.Identifier}' receives '{arguments.Count}' argument(s) instead of the correct amount '{function.Parameters.Count}'");
             
             Scope.EnterScope();
             // Add the evaluated arguments to the scope
@@ -538,7 +622,7 @@ namespace GSharpInterpreter
         public void CheckBoolean(Token Operator, object right)
         {
             if (IsBoolean(right)) return;
-            throw new GSharpError(ErrorType.COMPILING, $"Operand must be Boolean in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.SEMANTIC, $"Operand must be Boolean in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operands are boolean values. Throws a semantic error if they are not.
@@ -549,7 +633,7 @@ namespace GSharpInterpreter
         public void CheckBooleans(Token Operator, object left, object right)
         {
             if (IsBoolean(left, right)) return;
-            throw new GSharpError(ErrorType.COMPILING, $"Operands must be Boolean in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.SEMANTIC, $"Operands must be Boolean in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operand is a number. Throws a semantic error if it is not.
@@ -559,7 +643,7 @@ namespace GSharpInterpreter
         public void CheckNumber(Token Operator, object right)
         {
             if (IsNumber(right)) return;
-            throw new GSharpError(ErrorType.COMPILING, $"Operand must be Number in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.SEMANTIC, $"Operand must be Number in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the operands are numbers. Throws a semantic error if they are not.
@@ -570,7 +654,7 @@ namespace GSharpInterpreter
         public void CheckNumbers(Token Operator, object left, object right)
         {
             if (IsNumber(left, right)) return;
-            throw new GSharpError(ErrorType.COMPILING, $"Operands must be Numbers in '{Operator.Lexeme}' operation.");
+            throw new GSharpError(ErrorType.SEMANTIC, $"Operands must be Numbers in '{Operator.Lexeme}' operation.");
         }
         /// <summary>
         /// Checks if the given operands are number values.

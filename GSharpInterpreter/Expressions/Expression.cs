@@ -41,18 +41,48 @@ namespace GSharpInterpreter
     }
 
     /// <summary>
-    /// Represents a literal value expression, such as a number, boolean or string.
+    /// Represents a literal value expression, such as a number or string.
     /// </summary>
-    public class LiteralExpression : Expression
+    public abstract class LiteralExpression : Expression
     {
-        public object Value { get; }
-
-        public LiteralExpression(object value)
+        public abstract GSharpType Type { get; }
+    }
+    /// <summary>
+    /// Represents a number literal expression.
+    /// </summary>
+    public class GSharpNumber : LiteralExpression
+    {
+        public override GSharpType Type => GSharpType.NUMBER;
+        public double Value { get; }
+        public GSharpNumber(double value)
         {
             Value = value;
         }
+        public static GSharpNumber operator +(GSharpNumber n1, GSharpNumber n2)
+        {
+            return new GSharpNumber(n1.Value + n2.Value);
+        }
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
-
+    /// <summary>
+    /// Represents a string literal expression.
+    /// </summary>
+    public class GSharpString : LiteralExpression
+    {
+        public override GSharpType Type => GSharpType.STRING;
+        public string Value { get; }
+        public GSharpString(string value)
+        {
+            Value = value;
+        }
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
+    }
     /// <summary>
     /// Represents a grouping expression that wraps another expression.
     /// </summary>

@@ -1,0 +1,13 @@
+a = {3...7};
+b  = a;
+c,d,e,f,g = a;
+print b;
+print c;
+print d;
+print e;
+print f;
+print g "g";
+h,i = g;
+print h;
+print i;
+print count(i);

@@ -5,10 +5,10 @@ namespace GSharpInterpreter
 {
     public abstract class GSharpFigure: Expression
     {
-
     }
     public class Measure : GSharpFigure
     {
+        public GSharpType Type => GSharpType.MEASURE;
         public double Value { get; }
         public Measure(double value)
         {
@@ -37,6 +37,7 @@ namespace GSharpInterpreter
     }
     public class Point : GSharpFigure
     {
+        public GSharpType Type => GSharpType.POINT;
         public double X { get; }
         public double Y { get; }
         public Point(double x, double y)
@@ -59,6 +60,7 @@ namespace GSharpInterpreter
     }
     public class Line : GSharpFigure
     {
+        public GSharpType Type => GSharpType.LINE;
         public Point P1 { get; }
         public Point P2 { get; }
         public Line(Point p1, Point p2)
@@ -81,6 +83,7 @@ namespace GSharpInterpreter
     }
     public class Segment : GSharpFigure
     {
+        public GSharpType Type => GSharpType.SEGMENT;
         public Point P1 { get; }
         public Point P2 { get; }
         public Segment(Point p1, Point p2)
@@ -103,6 +106,7 @@ namespace GSharpInterpreter
     }
     public class Ray : GSharpFigure
     {
+        public GSharpType Type => GSharpType.RAY;
         public Point P1 { get; }
         public Point P2 { get; }
         public Ray(Point p1, Point p2)
@@ -125,6 +129,7 @@ namespace GSharpInterpreter
     }
     public class Circle : GSharpFigure
     {
+        public GSharpType Type => GSharpType.CIRCLE;
         public Point Center { get; }
         public Measure Radius { get; }
         public Circle(Point center, Measure radius)
@@ -147,6 +152,7 @@ namespace GSharpInterpreter
     }
     public class Arc : GSharpFigure
     {
+        public GSharpType Type => GSharpType.ARC;
         public Point Center { get; }
         public Measure Radius { get; }
         public Point InitialRayPoint { get; }
