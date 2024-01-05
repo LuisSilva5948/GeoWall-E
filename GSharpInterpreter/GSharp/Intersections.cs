@@ -650,20 +650,8 @@ public static class Intersections
     }
     public static bool IsInRay(Point point, Ray ray)
     {
-        double rayDirectionX = ray.P2.X - ray.P1.X;
-        double rayDirectionY = ray.P2.Y - ray.P1.Y;
-
-        double pointDirectionX = point.X - ray.P1.X;
-        double pointDirectionY = point.Y - ray.P1.Y;
-
-        double crossProduct = rayDirectionX * pointDirectionY - rayDirectionY * pointDirectionX;
-
-        if (crossProduct == 0 && (rayDirectionX * pointDirectionX + rayDirectionY * pointDirectionY >= 0))
-        {
-            return true;
-        }
-
-        return false;
+        Segment segment = new Segment(ray.P1, ray.P2);
+        return IsInSegment(point, segment) || PointDistance(point, ray.P2) <= PointDistance(point, ray.P1);
     }
     public static bool IsInArc(Point point, Arc arc)
     {
@@ -699,7 +687,10 @@ public static class Intersections
             return angleToInitialRay <= angleToPoint || angleToPoint <= angleToFinalRay;
         }
     }
-
+    public static double PointDistance(Point point1, Point point2)
+    {
+        return Math.Sqrt(Math.Pow(point1.X - point2.X, 2) + Math.Pow(point1.Y - point2.Y, 2));
+    }
     public static bool IsInSegment(Point point, Segment segment)
     {
         double minX = Math.Min(segment.P1.X, segment.P2.X);

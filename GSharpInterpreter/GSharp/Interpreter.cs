@@ -46,18 +46,20 @@ namespace GSharpInterpreter
                     }
                     return;
                 }
-
-                // Evaluating: Evaluate the expressions in the AST and produce a result
-                Evaluator evaluator = new Evaluator();
-                evaluator.Evaluate(AST);
-                if (evaluator.Errors.Count > 0)
+                // Checking: Check the AST for semantic errors
+                SemanticChecker checker = new SemanticChecker();
+                checker.Evaluate(AST);
+                if (checker.Errors.Count > 0)
                 {
-                    foreach (GSharpError error in evaluator.Errors)
+                    foreach (GSharpError error in checker.Errors)
                     {
                         userInterface.ReportError(error.Report());
                     }
                     return;
                 }
+                // Evaluating: Evaluate the expressions in the AST and produce a result
+                Evaluator evaluator = new Evaluator();
+                evaluator.Evaluate(AST);
             }
             catch (GSharpError error)
             {
