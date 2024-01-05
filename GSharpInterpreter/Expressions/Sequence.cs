@@ -176,6 +176,13 @@ namespace GSharpInterpreter
 
         public override Sequence GetSequenceTail(double index)
         {
+            if (index >= 0 && index <= SpecificCount)
+            {
+                if (Concatenated != null)
+                    return new FiniteSequence(Elements.GetRange((int)index, Elements.Count - (int)index), Concatenated);
+                else return new FiniteSequence(Elements.GetRange((int)index, Elements.Count - (int)index));
+            }
+            else
             if (Concatenated != null)
                 return new FiniteSequence(Elements.GetRange((int)index, Elements.Count - 1), Concatenated);
             else return new FiniteSequence(Elements.GetRange((int)index, Elements.Count - 1));

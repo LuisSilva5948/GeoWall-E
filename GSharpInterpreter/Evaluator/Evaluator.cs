@@ -1,14 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
-using System.IO;
-using static System.Formats.Asn1.AsnWriter;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GSharpInterpreter
 {
@@ -153,6 +145,16 @@ namespace GSharpInterpreter
             {
                 foreach (GSharpError error in parser.Errors)
                     Errors.Add(new GSharpError(ErrorType.SEMANTIC, $"Error importing file '{path}': {error.Message}"));
+                return;
+            }
+            SemanticChecker checker = new SemanticChecker();
+            checker.Evaluate(AST);
+            if (checker.Errors.Count > 0)
+            {
+                foreach (GSharpError error in checker.Errors)
+                {
+                    Errors.Add(new GSharpError(ErrorType.SEMANTIC, $"Error importing file '{path}': {error.Message}"));
+                }
                 return;
             }
             try

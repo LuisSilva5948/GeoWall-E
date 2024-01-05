@@ -12,7 +12,7 @@ namespace GSharpInterpreter
     public class SemanticChecker
     {
         private Scope Scope;                                // The scope of the evaluator
-        private readonly int CallLimit = 500;               // The maximum amount of calls allowed
+        private readonly int CallLimit = 55500;               // The maximum amount of calls allowed
         private int Calls;                                  // The amount of calls made
         public List<GSharpError> Errors { get; private set; }     // The list of errors encountered during the evaluation
 
@@ -29,6 +29,7 @@ namespace GSharpInterpreter
                 try
                 {
                     Evaluate(expression);
+                    
                 }
                 catch (GSharpError error)
                 {
