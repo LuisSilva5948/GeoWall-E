@@ -45,14 +45,13 @@ namespace GSharpInterpreter
     /// </summary>
     public abstract class LiteralExpression : Expression
     {
-        public abstract GSharpType Type { get; }
     }
     /// <summary>
     /// Represents a number literal expression.
     /// </summary>
-    public class GSharpNumber : LiteralExpression
+    public class GSharpNumber : LiteralExpression, IGSharpObject
     {
-        public override GSharpType Type => GSharpType.NUMBER;
+        public GSharpType Type => GSharpType.NUMBER;
         public double Value { get; }
         public GSharpNumber(double value)
         {
@@ -62,6 +61,7 @@ namespace GSharpInterpreter
         {
             return new GSharpNumber(n1.Value + n2.Value);
         }
+
         public override string ToString()
         {
             return Value.ToString();
@@ -70,9 +70,9 @@ namespace GSharpInterpreter
     /// <summary>
     /// Represents a string literal expression.
     /// </summary>
-    public class GSharpString : LiteralExpression
+    public class GSharpString : LiteralExpression, IGSharpObject
     {
-        public override GSharpType Type => GSharpType.STRING;
+        public GSharpType Type => GSharpType.STRING;
         public string Value { get; }
         public GSharpString(string value)
         {
@@ -107,6 +107,10 @@ namespace GSharpInterpreter
         public ConstantExpression(string id)
         {
             ID = id;
+        }
+        public override string ToString()
+        {
+            return ID;
         }
     }
 
@@ -206,12 +210,21 @@ namespace GSharpInterpreter
     /// <summary>
     /// Class that representes undefined or null expressions.
     /// </summary>
-    public class Undefined : Expression
+    public class Undefined : Expression, IGSharpObject
     {
         public Undefined() { }
         public override string ToString()
         {
             return "Undefined";
+        }
+        public GSharpType Type => GSharpType.UNDEFINED;
+        public static Object operator +(Object obj, Undefined undefined)
+        {
+            return obj;
+        }
+        public static Undefined operator +(Undefined undefined, Object obj)
+        {
+            return undefined;
         }
     }
 

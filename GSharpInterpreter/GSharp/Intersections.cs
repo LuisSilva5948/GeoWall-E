@@ -127,10 +127,10 @@ public static class Intersections
             return new FiniteSequence(new List<Expression>() { point1 });
         else return new FiniteSequence(new List<Expression>());
     }
-    public static object Intersect(Point point, Line recta)
+    public static object Intersect(Point point, Line line)
     {
-        var (m, n) = GetLineEquation(recta);
-        if (point.Y == (m * point.X + n))
+        var (m, n) = GetLineEquation(line);
+        if (point.Y == (m * point.X + n) || double.IsInfinity(m) && point.X == line.P1.X)
             return new FiniteSequence(new List<Expression>() { point });
         else return new FiniteSequence(new List<Expression>());
     }
@@ -238,43 +238,69 @@ public static class Intersections
 
     public static object Intersect(Line line, Circle circle)
     {
-        var (m, c) = GetLineEquation(line);
         var center = circle.Center;
         var radius = circle.Radius.Value;
 
         double centerX = center.X;
         double centerY = center.Y;
 
-        // Discriminant equation: b^2 -4*a*c.
-        double A = 1 + Math.Pow(m, 2);
-        double B = 2 * (m * c - m * centerY - centerX);
-        double C = Math.Pow(centerY, 2) - Math.Pow(radius, 2) + Math.Pow(centerX, 2) - 2 * c * centerY + Math.Pow(c, 2);
-
-        double discriminant = Math.Pow(B, 2) - 4 * A * C;
-        // Distance from center to line
-        double distance = DistancePointLine(center, line);
-
         List<Expression> intersections = new List<Expression>();
-        if (distance > radius)
-        {
-            return new FiniteSequence(intersections);
-        }
-        else if (distance == radius)
-        {
-            double x = (-B) / (2 * A);
-            double y = m * x + c;
-            intersections.Add(new Point(x, y));
-        }
-        else if (discriminant >= 0)
-        {
-            double x1 = (-B + Math.Sqrt(discriminant)) / (2 * A);
-            double x2 = (-B - Math.Sqrt(discriminant)) / (2 * A);
+        var (m, c) = GetLineEquation(line);
 
-            double y1 = m * x1 + c;
-            double y2 = m * x2 + c;
+        if (double.IsInfinity(m))
+        {
+            double lineX = line.P1.X;
+            double discriminant = Math.Pow(radius, 2) - Math.Pow(lineX - centerX, 2);
+            if (discriminant < 0)
+            {
+                return new FiniteSequence(intersections);
+            }
+            else if (discriminant == 0)
+            {
+                double y = centerY;
+                intersections.Add(new Point(lineX, y));
+            }
+            else
+            {
+                double y1 = centerY + Math.Sqrt(discriminant);
+                double y2 = centerY - Math.Sqrt(discriminant);
+                intersections.Add(new Point(lineX, y1));
+                intersections.Add(new Point(lineX, y2));
+            }
+        }
+        else
+        {
+            // Discriminant equation: b^2 -4*a*c.
+            double A = 1 + Math.Pow(m, 2);
+            double B = 2 * (m * c - m * centerY - centerX);
+            double C = Math.Pow(centerY, 2) - Math.Pow(radius, 2) + Math.Pow(centerX, 2) - 2 * c * centerY + Math.Pow(c, 2);
 
-            intersections.Add(new Point(x1, y1));
-            intersections.Add(new Point(x2, y2));
+            double discriminant = Math.Pow(B, 2) - 4 * A * C;
+            // Distance from center to line
+            double distance = DistancePointLine(center, line);
+
+
+            if (distance > radius)
+            {
+                return new FiniteSequence(intersections);
+            }
+            else if (distance == radius)
+            {
+                double x = (-B) / (2 * A);
+                double y = m * x + c;
+                intersections.Add(new Point(x, y));
+            }
+            else if (discriminant >= 0)
+            {
+                double x1 = (-B + Math.Sqrt(discriminant)) / (2 * A);
+                double x2 = (-B - Math.Sqrt(discriminant)) / (2 * A);
+
+                double y1 = m * x1 + c;
+                double y2 = m * x2 + c;
+
+                intersections.Add(new Point(x1, y1));
+                intersections.Add(new Point(x2, y2));
+            }
         }
         return new FiniteSequence(intersections);
     }
@@ -618,7 +644,7 @@ public static class Intersections
 
     public static (double, double) GetLineEquation(Line line)
     {
-        double m = (line.P2.Y - line.P1.Y) / (line.P2.X - line.P1.X);
+        double m = line.P1.X == line.P2.X ? double.PositiveInfinity : (line.P2.Y - line.P1.Y) / (line.P2.X - line.P1.X);
         double n = line.P1.Y - m * line.P1.X;
         return (m, n);
     }

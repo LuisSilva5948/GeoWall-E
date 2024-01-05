@@ -419,7 +419,7 @@ namespace GSharpInterpreter
             }
             if (arguments[0] is Sequence sequence)
             {
-                double count = sequence.Count;
+                double count = sequence.TotalCount;
                 if (double.IsPositiveInfinity(count))
                     return new Undefined();
                 else

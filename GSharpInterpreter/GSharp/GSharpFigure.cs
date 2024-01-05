@@ -35,7 +35,7 @@ namespace GSharpInterpreter
             return new Measure(m1.Value - m2.Value);
         }
     }
-    public class Point : GSharpFigure
+    public class Point : GSharpFigure, IGSharpObject
     {
         public GSharpType Type => GSharpType.POINT;
         public double X { get; }
@@ -58,7 +58,7 @@ namespace GSharpInterpreter
             else return false;
         }
     }
-    public class Line : GSharpFigure
+    public class Line : GSharpFigure, IGSharpObject
     {
         public GSharpType Type => GSharpType.LINE;
         public Point P1 { get; }
@@ -81,7 +81,7 @@ namespace GSharpInterpreter
             else return false;
         }
     }
-    public class Segment : GSharpFigure
+    public class Segment : GSharpFigure, IGSharpObject
     {
         public GSharpType Type => GSharpType.SEGMENT;
         public Point P1 { get; }
@@ -104,7 +104,7 @@ namespace GSharpInterpreter
             else return false;
         }
     }
-    public class Ray : GSharpFigure
+    public class Ray : GSharpFigure, IGSharpObject
     {
         public GSharpType Type => GSharpType.RAY;
         public Point P1 { get; }
@@ -127,7 +127,7 @@ namespace GSharpInterpreter
             else return false;
         }
     }
-    public class Circle : GSharpFigure
+    public class Circle : GSharpFigure, IGSharpObject
     {
         public GSharpType Type => GSharpType.CIRCLE;
         public Point Center { get; }
@@ -150,7 +150,7 @@ namespace GSharpInterpreter
             else return false;
         }
     }
-    public class Arc : GSharpFigure
+    public class Arc : GSharpFigure, IGSharpObject
     {
         public GSharpType Type => GSharpType.ARC;
         public Point Center { get; }

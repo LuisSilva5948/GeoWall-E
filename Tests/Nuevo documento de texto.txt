@@ -1,6 +1,8 @@
-a = {3...7};
-b  = a;
+b = {3, "asd" } + {} + {1...1};
+a = b + {8,8,9};
 c,d,e,f,g = a;
+print a;
+print count(b) "count de b";
 print b;
 print c;
 print d;
@@ -10,4 +12,47 @@ print g "g";
 h,i = g;
 print h;
 print i;
-print count(i);
+print count(i) "count de i";
+lls = line (point(200,100), point(200,200));
+arc ll;
+arc mm;
+draw ll;
+draw mm;
+pp = intersect(ll,mm);
+print count (pp);
+draw pp;
+
+
+
+/*
+m1 = measure(point(0,0), point(69,0));
+m2 = measure(point(0,0), point(208,0));
+m3 = measure(point(0,0), point(232,0));
+m4 = measure(point(0,0), point(209,0));
+
+xx = arc(point(399, 381), point(273, 455), point(107, 209), m1);
+
+xy = circle(point(32, 117), m2);
+
+yy = arc(point(24, 457),point(77, 398), point(94, 300), m3);
+
+yx = circle(point(123, 268), m4);
+
+color red;
+draw xx;
+color blue;
+draw xy;
+color green;
+draw yy;
+color magenta;
+draw yx;
+color black;
+draw intersect(xx,yy);
+draw intersect(xy,yy);
+draw intersect(yx,yy);
+draw intersect(xx,yx);
+draw intersect(yx, xy);
+*/
+
+/*zz = Arc(Point(465, 137), 213, Point(100, 230), Point(16, 274))
+Circle(Point(344, 393), 112)*/

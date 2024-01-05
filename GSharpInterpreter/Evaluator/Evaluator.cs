@@ -40,7 +40,7 @@ namespace GSharpInterpreter
                 }
                 catch (Exception e)
                 {
-                    Errors.Add(new GSharpError(ErrorType.RUNTIME, e.Message));
+                    throw new GSharpError(ErrorType.RUNTIME, e.Message);
                 }
             }
         }
@@ -83,11 +83,12 @@ namespace GSharpInterpreter
                 case ImportStatement import:
                     EvaluateImport(import);
                     return "Imported";
-
                 case GSharpNumber number:
                     return number.Value;
                 case GSharpString str:
                     return str.Value;
+                case IGSharpObject gSharpObject:
+                    return gSharpObject;
                 case UnaryExpression unary:
                     return EvaluateUnary(unary.Operator, Evaluate(unary.Right));
                 case BinaryExpression binary:
@@ -106,13 +107,13 @@ namespace GSharpInterpreter
                 case RandomDeclaration randomDeclaration:
                     return EvaluateRandomDeclaration(randomDeclaration);
                 
+                /*case FiniteSequenceExpression finiteSequenceExpression:
+                    return EvaluateSequenceExpression(finiteSequenceExpression);*/
                 case Sequence sequence:
                     return sequence;
                 case GSharpFigure figure:
                     return figure;
                 
-                case Undefined undefined:
-                    return undefined;
                 default:
                     throw new GSharpError(ErrorType.RUNTIME, "Invalid expression.");
             }   
@@ -254,23 +255,21 @@ namespace GSharpInterpreter
                 throw new GSharpError(ErrorType.SEMANTIC, "Multiple assignment can only be done to sequences.");
             if (sequence is FiniteSequence finiteSequence)
             {
-                // Get the elements of the sequence
-                List<Expression> elements = finiteSequence.GetElements();
+                IEnumerator<Expression> enumerator = finiteSequence.GetEnumerator();
                 // Iterate through the variables except the last one
                 for (int i = 0; i < variables.Count - 1; i++)
                 {
                     // If there are no more elements, the variable gets an undefined value
-                    if (elements.Count == 0)
+                    if (!enumerator.MoveNext())
                         Scope.SetConstant(variables[i], new Undefined());
-                    // Otherwise, the variable gets the value of the next element, and the element is removed from the list
+                    // Otherwise, the variable gets the value of the next element
                     else
                     {
-                        Scope.SetConstant(variables[i], Evaluate(elements[0]));
-                        elements.RemoveAt(0);
+                        Scope.SetConstant(variables[i], Evaluate(enumerator.Current));
                     }
                 }
                 // The last variable gets the rest of the sequence
-                Scope.SetConstant(variables[variables.Count - 1], new FiniteSequence(elements));
+                Scope.SetConstant(variables[variables.Count - 1], finiteSequence.FindSequenceTail(variables.Count-1));
             }
             else if (sequence is InfiniteSequence infiniteSequence)
             {
@@ -280,11 +279,11 @@ namespace GSharpInterpreter
                 for (int i = 0; i < variables.Count - 1; i++)
                 {
                     enumerator.MoveNext();
-                    Scope.SetConstant(variables[i], enumerator.Current);
+                    Scope.SetConstant(variables[i], Evaluate(enumerator.Current));
                 }
                 // The last variable gets the rest of the sequence
                 enumerator.MoveNext();
-                Scope.SetConstant(variables[variables.Count - 1], new InfiniteSequence((GSharpNumber)enumerator.Current));
+                Scope.SetConstant(variables[variables.Count - 1], infiniteSequence.FindSequenceTail(variables.Count - 1));
             }
             else if (sequence is RangeSequence rangeSequence)
             {
@@ -296,7 +295,7 @@ namespace GSharpInterpreter
                     // If there are no more elements, the variable gets an undefined value
                     if (enumerator.MoveNext())
                     {
-                        Scope.SetConstant(variables[i], enumerator.Current);
+                        Scope.SetConstant(variables[i], Evaluate(enumerator.Current));
                     }
                     else Scope.SetConstant(variables[i], new Undefined());
                 }
@@ -306,7 +305,7 @@ namespace GSharpInterpreter
                 {
                     if (enumerator.Current is not GSharpNumber)
                         throw new GSharpError(ErrorType.SEMANTIC, "Range sequence must be of numbers.");
-                    Scope.SetConstant(variables[variables.Count - 1], new RangeSequence((GSharpNumber)enumerator.Current, rangeSequence.End));
+                    Scope.SetConstant(variables[variables.Count - 1], rangeSequence.FindSequenceTail(variables.Count - 1));
                 }
                 // If there are no more elements, the variable gets an empty sequence
                 else Scope.SetConstant(variables[variables.Count - 1], new FiniteSequence(new List<Expression>()));
@@ -394,6 +393,8 @@ namespace GSharpInterpreter
             switch (Operator.Type)
             {
                 case TokenType.ADDITION:
+                    if (left is Undefined || right is Undefined)
+                        return left;
                     if (left is Sequence leftSequence && right is Sequence rightSequence)
                     {
                         return leftSequence + rightSequence;
@@ -485,7 +486,6 @@ namespace GSharpInterpreter
         public object EvaluateConstant(string name)
         {
             return Scope.GetValue(name);
-            //return CurrentScope().ContainsKey(name)? CurrentScope()[name] : throw new Error(ErrorType.COMPILING, $"Value of {name} wasn't declared.");
         }
         /// <summary>
         /// Evaluates a let-in expression by creating a new scope, declaring the variables and evaluating the body expression.
@@ -610,7 +610,41 @@ namespace GSharpInterpreter
             }
             return result;
         }
-
+        /*public object EvaluateSequenceExpression(FiniteSequenceExpression finiteSequenceExpression)
+        {
+            List<Expression> elements = finiteSequenceExpression.Elements;
+            if (elements.Count == 0)
+                return new FiniteSequence(new List<Expression>(), GSharpType.EMPTY);
+            List<object> evaluatedElements = new List<object>();
+            List<GSharpType> elementTypes = new List<GSharpType>();
+            foreach (Expression element in elements)
+            {
+                if (element is IGSharpObject)
+                    evaluatedElements.Add(element);
+                if (element is ConstantExpression)
+                    evaluatedElements.Add(Evaluate(element));
+                throw new GSharpError(ErrorType.SEMANTIC, "Elements of a sequence must be written as constants or literals.");
+            }
+            foreach (object element in evaluatedElements)
+            {
+                if (element is not IGSharpObject or double or string)
+                    throw new GSharpError(ErrorType.SEMANTIC, "Elements of a sequence must be of type 'Point', 'Line', 'Segment', 'Ray', 'Circle' or 'Arc', 'Number', 'String', 'Sequence' or 'Undefined'.");
+                if (element is double)
+                    elementTypes.Add(GSharpType.NUMBER);
+                else if (element is string)
+                    elementTypes.Add(GSharpType.STRING);
+                else elementTypes.Add(((IGSharpObject)element).Type);
+            }
+            if (evaluatedElements.Count == 0)
+                return new FiniteSequence(new List<Expression>());
+            GSharpType elementType = ((IGSharpObject)evaluatedElements[0]).Type;
+            foreach (GSharpType type in elementTypes)
+            {
+                if (type != elementType)
+                    throw new GSharpError(ErrorType.SEMANTIC, "Sequence elements must be of the same type.");
+            }
+            return new FiniteSequence(elements);
+        }*/
 
         #region Helper Methods
 

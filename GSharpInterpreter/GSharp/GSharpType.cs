@@ -17,7 +17,8 @@ namespace GSharpInterpreter
         SEGMENT,
         CIRCLE,
         ARC,
+        UNDEFINED,
         SEQUENCE,
-        UNDEFINED
+        EMPTY
     }
 }

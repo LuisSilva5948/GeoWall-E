@@ -8,9 +8,49 @@ namespace GSharpInterpreter
     public abstract class Sequence: Expression, IEnumerable<Expression>
     {
         public GSharpType ElementType { get; }
+        public Sequence? Parent { get; private set; }
         public Sequence? Concatenated { get; set; }
+        public int ConcatenationLevel()
+        {
+            if (Concatenated != null)
+            {
+                return 1 + Concatenated.ConcatenationLevel();
+            }
+            else return 0;
+        }
+        public abstract Sequence GetSequenceTail(double index);
+        public Sequence FindSequenceTail(double index)
+        {
+            if (double.IsInfinity(SpecificCount))
+                return GetSequenceTail(index);
+            if (index >= 0 && index <= TotalCount)
+            {
+                if (index <= SpecificCount)
+                    return GetSequenceTail(index);
+                else if (Concatenated != null)
+                    return Concatenated.FindSequenceTail(index - SpecificCount);
+                else return new FiniteSequence(new List<Expression>());
+            }
+            else return new FiniteSequence(new List<Expression>());
+        }
         public abstract void Concatenate(Sequence sequence);
-        public abstract double Count { get; }
+        public abstract double TotalCount { get; }
+        public abstract double SpecificCount { get; }
+        public GSharpType GetElementType()
+        {
+            if (ElementType != GSharpType.EMPTY)
+                return ElementType;
+            if (Parent != null)
+            {
+                GSharpType type = Parent.ElementType;
+                if (type == GSharpType.EMPTY)
+                {
+                    return Parent.GetElementType();
+                }
+                else return type;
+            }
+            else return this.ElementType;
+        }
         public abstract IEnumerator<Expression> GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -20,41 +60,22 @@ namespace GSharpInterpreter
 
         public static Sequence operator +(Sequence s1, Sequence s2)
         {
-            if (s1 is InfiniteSequence infiniteSeq)
-                return infiniteSeq;
-            if (s1 is FiniteSequence finiteSeq)
-            {
-                if (finiteSeq.Count == 0) return s2;
-            }
-            if (s1 is RangeSequence rangeSeq)
-            {
-                if (rangeSeq.Count == 0) return s2;
-            }
-            if (s2 is FiniteSequence finite)
-            {
-                if (finite.Count == 0) return s1;
-            }
             s1.Concatenate(s2);
             return s1;
-        }
-        public static Sequence operator +(Sequence seq, Undefined undefined)
-        {
-            return seq;
-        }
-        public static Undefined operator +(Undefined undefined, Sequence seq)
-        {
-            return undefined;
         }
     }
     /// <summary>
     /// Represents a finite sequence of expressions of the same type.
     /// </summary>
-    public class FiniteSequence : Sequence, IEnumerable<Expression>
+    public class FiniteSequence : Sequence, IEnumerable<Expression>, IGSharpObject
     {
         public GSharpType Type => GSharpType.SEQUENCE;
         public GSharpType ElementType => GetElementType();
+        private GSharpType SequenceType = GSharpType.UNDEFINED;
         public GSharpType GetElementType()
         {
+            if (SequenceType != GSharpType.UNDEFINED)
+                return SequenceType;
             if (Elements.Count > 0)
             {
                 if (Elements[0] is Measure) return GSharpType.MEASURE;
@@ -68,24 +89,41 @@ namespace GSharpInterpreter
                 else if (Elements[0] is GSharpNumber) return GSharpType.NUMBER;
                 else return GSharpType.UNDEFINED;
             }
-            else return GSharpType.UNDEFINED;
+            else return GSharpType.EMPTY;
         }
         public List<Expression> Elements { get; private set; }
         public FiniteSequence(List<Expression> elements)
         {
             Elements = elements;
         }
-        public override double Count
+        public FiniteSequence(List<Expression> elements, Sequence concatenated)
+        {
+            Elements = elements;
+            Concatenated = concatenated;
+        }
+        public FiniteSequence(List<Expression> elements, GSharpType sequenceType)
+        {
+            Elements = elements;
+            SequenceType = sequenceType;
+        }
+        public FiniteSequence(List<Expression> elements, Sequence concatenated, GSharpType sequenceType)
+        {
+            Elements = elements;
+            Concatenated = concatenated;
+            SequenceType = sequenceType;
+        }
+        public override double TotalCount
         {
             get
             {
                 if (Concatenated != null)
                 {
-                    return Elements.Count + Concatenated.Count;
+                    return Elements.Count + Concatenated.TotalCount;
                 }
                 else return Elements.Count;
             }
         }
+        public override double SpecificCount => Elements.Count;
         
         public List<Expression> GetElements()
         {
@@ -115,18 +153,7 @@ namespace GSharpInterpreter
         
         public override void Concatenate(Sequence sequence)
         {
-            if (Count > 0)
-            {
-                if (ElementType == sequence.ElementType)
-                {
-                    if (Concatenated == null)
-                        Concatenated = sequence;
-                    else
-                        Concatenated.Concatenate(sequence);
-                }
-                else throw new GSharpError(ErrorType.SEMANTIC, $"Cannot concatenate a sequence of type {sequence.ElementType} to a sequence of type {ElementType}.");
-            }
-            else
+            if (GetElementType() == sequence.ElementType || ElementType == GSharpType.EMPTY)
             {
                 if (Concatenated == null)
                 {
@@ -137,11 +164,19 @@ namespace GSharpInterpreter
                     Concatenated.Concatenate(sequence);
                 }
             }
+            else
+            {
+                throw new GSharpError(ErrorType.SEMANTIC, $"Cannot concatenate a sequence of type {sequence.ElementType} to a sequence of type {GetElementType()}.");
+            }
         }
         public override string ToString()
         {
             string result = "";
-            if (Elements.Count == 0) return "{ }";
+            if (Elements.Count == 0)
+            {
+                result = "{ }";
+            }
+            else
             result = "{ ";
             foreach (Expression element in Elements)
             {
@@ -156,11 +191,18 @@ namespace GSharpInterpreter
             }
             return result;
         }
+
+        public override Sequence GetSequenceTail(double index)
+        {
+            if (Concatenated != null)
+                return new FiniteSequence(Elements.GetRange((int)index, Elements.Count - 1), Concatenated);
+            else return new FiniteSequence(Elements.GetRange((int)index, Elements.Count - 1));
+        }
     }
     /// <summary>
     /// Represents an infinite sequence of expressions of integers.
     /// </summary>
-    public class InfiniteSequence : Sequence, IEnumerable<Expression>
+    public class InfiniteSequence : Sequence, IEnumerable<Expression>, IGSharpObject
     {
         public GSharpType Type => GSharpType.SEQUENCE;
         public GSharpType ElementType => GSharpType.NUMBER;
@@ -170,7 +212,13 @@ namespace GSharpInterpreter
         {
             Start = start;
         }
-        public override double Count => double.PositiveInfinity;
+        public InfiniteSequence(GSharpNumber start, Sequence concatenated)
+        {
+            Start = start;
+            Concatenated = concatenated;
+        }
+        public override double TotalCount => double.PositiveInfinity;
+        public override double SpecificCount => double.PositiveInfinity;
         public override IEnumerator<Expression> GetEnumerator()
         {
             GSharpNumber n = Start;
@@ -188,39 +236,77 @@ namespace GSharpInterpreter
 
         public override string ToString()
         {
-            return $"{{ {Start}... }}";
+            string result = $"{{ {Start}... }}";
+            if (Concatenated != null)
+            {
+                result += " + " + Concatenated.ToString();
+            }
+            return result;
         }
 
         public override void Concatenate(Sequence sequence)
         {
-            return;
+            if (GetElementType() == sequence.ElementType || ElementType == GSharpType.EMPTY)
+            {
+                if (Concatenated == null)
+                {
+                    Concatenated = sequence;
+                }
+                else
+                {
+                    Concatenated.Concatenate(sequence);
+                }
+            }
+            else throw new GSharpError(ErrorType.SEMANTIC, $"Cannot concatenate a sequence of type {sequence.ElementType} to a sequence of type {GetElementType()}.");
+        }
+
+        public override Sequence GetSequenceTail(double index)
+        {
+            if (Concatenated != null)
+                return new InfiniteSequence(new GSharpNumber(Start.Value + index), Concatenated);
+            else return new InfiniteSequence(new GSharpNumber(Start.Value + index));
         }
     }
-
-    public class RangeSequence : Sequence, IEnumerable<Expression>
+    /// <summary>
+    /// Represents a range sequence of expressions of integers.
+    /// </summary>
+    public class RangeSequence : Sequence, IEnumerable<Expression>, IGSharpObject
     {
         public GSharpType Type => GSharpType.SEQUENCE;
         public GSharpType ElementType => GSharpType.NUMBER;
         public GSharpNumber Start { get; }
         public GSharpNumber End { get; }
-        public override double Count
+        public override double TotalCount
         {
             get
             {
                 if (Concatenated != null)
                 {
-                    if (End.Value - Start.Value >= 0) return (End.Value - Start.Value) + 1 + Concatenated.Count;
-                    else return Concatenated.Count;
+                    if (End.Value - Start.Value >= 0) return (End.Value - Start.Value) + 1 + Concatenated.TotalCount;
+                    else return Concatenated.TotalCount;
                 }
                 if (End.Value - Start.Value >= 0) return (End.Value - Start.Value) + 1;
                 else return 0;
             }
         }
-
+        public override double SpecificCount
+        {
+            get
+            {
+                if (End.Value - Start.Value >= 0) return (End.Value - Start.Value) + 1;
+                else return 0;
+            }
+        }
         public RangeSequence(GSharpNumber start, GSharpNumber end)
         {
             Start = start;
             End = end;
+        }
+        public RangeSequence(GSharpNumber start, GSharpNumber end, Sequence concatenated)
+        {
+            Start = start;
+            End = end;
+            Concatenated = concatenated;
         }
 
         public override IEnumerator<Expression> GetEnumerator()
@@ -230,6 +316,14 @@ namespace GSharpInterpreter
                 for (double i = Start.Value; i <= End.Value; i++)
                 {
                     yield return new GSharpNumber(i);
+                }
+            }
+            if (Concatenated != null)
+            {
+                var enumerator = Concatenated.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    yield return enumerator.Current;
                 }
             }
         }
@@ -252,22 +346,7 @@ namespace GSharpInterpreter
 
         public override void Concatenate(Sequence sequence)
         {
-            if (Count > 0)
-            {
-                if (ElementType == sequence.ElementType)
-                {
-                    if (Concatenated == null)
-                    {
-                        Concatenated = sequence;
-                    }
-                    else
-                    {
-                        Concatenated.Concatenate(sequence);
-                    }
-                }
-                else throw new GSharpError(ErrorType.SEMANTIC, $"Cannot concatenate a sequence of type {sequence.ElementType} to a sequence of type {ElementType}.");
-            }
-            else
+            if (GetElementType() == sequence.ElementType || ElementType == GSharpType.EMPTY)
             {
                 if (Concatenated == null)
                 {
@@ -278,6 +357,27 @@ namespace GSharpInterpreter
                     Concatenated.Concatenate(sequence);
                 }
             }
+            else
+            {
+                throw new GSharpError(ErrorType.SEMANTIC, $"Cannot concatenate a sequence of type {sequence.ElementType} to a sequence of type {GetElementType()}.");
+            }
+        }
+
+        public override Sequence GetSequenceTail(double index)
+        {
+            if (Concatenated != null)
+                return new RangeSequence(new GSharpNumber(Start.Value + index), End, Concatenated);
+            else
+            return new RangeSequence(new GSharpNumber(Start.Value + index), End);
+        }
+    }
+    public class FiniteSequenceExpression : Expression
+    {
+        public GSharpType Type => GSharpType.SEQUENCE;
+        public List<Expression> Elements { get; }
+        public FiniteSequenceExpression(List<Expression> elements)
+        {
+            Elements = elements;
         }
     }
 }
