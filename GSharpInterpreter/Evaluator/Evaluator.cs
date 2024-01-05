@@ -107,8 +107,8 @@ namespace GSharpInterpreter
                 case RandomDeclaration randomDeclaration:
                     return EvaluateRandomDeclaration(randomDeclaration);
                 
-                /*case FiniteSequenceExpression finiteSequenceExpression:
-                    return EvaluateSequenceExpression(finiteSequenceExpression);*/
+                case FiniteSequenceExpression finiteSequenceExpression:
+                    return EvaluateSequenceExpression(finiteSequenceExpression);
                 case Sequence sequence:
                     return sequence;
                 case GSharpFigure figure:
@@ -204,26 +204,36 @@ namespace GSharpInterpreter
                         break;
                 }
             }
+            void Draw(Expression toDraw, string label = "")
+            {
+                if (toDraw is GSharpFigure figure)
+                {
+                    DrawFigure(figure, label);
+                }
+                else if (toDraw is FiniteSequence sequence)
+                {
+                    IEnumerator<Expression> enumerator = sequence.GetEnumerator();
+                    while (enumerator.MoveNext())
+                    {
+                        object draw = Evaluate(enumerator.Current);
+                        if (draw is GSharpFigure or FiniteSequence)
+                            Draw((Expression)draw, label);
+                        else throw new GSharpError(ErrorType.SEMANTIC, "Draw expression must be a sequence of figures of the same type or a figure.");
+                    }
+                }
+                else throw new GSharpError(ErrorType.SEMANTIC, "Draw expression must be a sequence of figures of the same type or a figure.");
+            }
             object expressionToDraw = Evaluate(draw.Expression);
 
             if (expressionToDraw is Undefined)
                 return;
-            if (expressionToDraw is FiniteSequence sequence)
-            {
-                // Checking that all elements are figures of the same type
-                foreach (Expression element in sequence.GetElements())
-                {
-                    if (Evaluate(element) is not GSharpFigure)
-                        throw new GSharpError(ErrorType.SEMANTIC, "Draw expression must be a sequence of figures of the same type or a figure.");
-                }
-                foreach (Expression element in sequence.GetElements())
-                {
-                    DrawFigure((GSharpFigure)Evaluate(element));
-                }
-            }
             else if (expressionToDraw is GSharpFigure figure)
             {
                 DrawFigure(figure, label);
+            }
+            else if (expressionToDraw is FiniteSequence sequence)
+            {
+                Draw(sequence, label);
             }
             else throw new GSharpError(ErrorType.SEMANTIC, "Draw expression must be a sequence of figures of the same type or a figure.");
         }
@@ -610,7 +620,7 @@ namespace GSharpInterpreter
             }
             return result;
         }
-        /*public object EvaluateSequenceExpression(FiniteSequenceExpression finiteSequenceExpression)
+        public object EvaluateSequenceExpression(FiniteSequenceExpression finiteSequenceExpression)
         {
             List<Expression> elements = finiteSequenceExpression.Elements;
             if (elements.Count == 0)
@@ -621,30 +631,28 @@ namespace GSharpInterpreter
             {
                 if (element is IGSharpObject)
                     evaluatedElements.Add(element);
-                if (element is ConstantExpression)
+                else if (element is ConstantExpression)
                     evaluatedElements.Add(Evaluate(element));
-                throw new GSharpError(ErrorType.SEMANTIC, "Elements of a sequence must be written as constants or literals.");
+                else throw new GSharpError(ErrorType.SEMANTIC, "Elements of a sequence must be written as constants or literals.");
             }
             foreach (object element in evaluatedElements)
             {
-                if (element is not IGSharpObject or double or string)
-                    throw new GSharpError(ErrorType.SEMANTIC, "Elements of a sequence must be of type 'Point', 'Line', 'Segment', 'Ray', 'Circle' or 'Arc', 'Number', 'String', 'Sequence' or 'Undefined'.");
                 if (element is double)
                     elementTypes.Add(GSharpType.NUMBER);
                 else if (element is string)
                     elementTypes.Add(GSharpType.STRING);
-                else elementTypes.Add(((IGSharpObject)element).Type);
+                else if (element is IGSharpObject)
+                    elementTypes.Add(((IGSharpObject)element).Type);
+                else throw new GSharpError(ErrorType.SEMANTIC, "Elements of a sequence must be of type Number, String, Point, Line, Segment, Ray, Circle or Arc.");
             }
-            if (evaluatedElements.Count == 0)
-                return new FiniteSequence(new List<Expression>());
-            GSharpType elementType = ((IGSharpObject)evaluatedElements[0]).Type;
+            GSharpType elementType = elementTypes[0];
             foreach (GSharpType type in elementTypes)
             {
                 if (type != elementType)
                     throw new GSharpError(ErrorType.SEMANTIC, "Sequence elements must be of the same type.");
             }
-            return new FiniteSequence(elements);
-        }*/
+            return new FiniteSequence(elements, elementType);
+        }
 
         #region Helper Methods
 

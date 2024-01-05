@@ -406,7 +406,7 @@ namespace GSharpInterpreter
                 while (Match(TokenType.COMMA));
             }
             Consume(TokenType.RIGHT_BRACE, $"Expected '}}' in sequence after {Previous().Lexeme}.");
-            return new FiniteSequence(elements);
+            return new FiniteSequenceExpression(elements);
         }
         /// <summary>
         /// Parses a random figure expression or a random sequence of figures of the same kind.

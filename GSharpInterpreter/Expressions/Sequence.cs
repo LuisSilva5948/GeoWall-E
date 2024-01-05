@@ -5,19 +5,18 @@ using System.Xml.Linq;
 
 namespace GSharpInterpreter
 {
+    public enum SequenceType
+    {
+        FINITE,
+        INFINITE
+    }
     public abstract class Sequence: Expression, IEnumerable<Expression>
     {
+        public GSharpType Type => GSharpType.SEQUENCE;
+        public SequenceType SequenceType => double.IsInfinity(SpecificCount) ? SequenceType.INFINITE : SequenceType.FINITE;
         public GSharpType ElementType { get; }
         public Sequence? Parent { get; private set; }
         public Sequence? Concatenated { get; set; }
-        public int ConcatenationLevel()
-        {
-            if (Concatenated != null)
-            {
-                return 1 + Concatenated.ConcatenationLevel();
-            }
-            else return 0;
-        }
         public abstract Sequence GetSequenceTail(double index);
         public Sequence FindSequenceTail(double index)
         {
@@ -70,27 +69,10 @@ namespace GSharpInterpreter
     public class FiniteSequence : Sequence, IEnumerable<Expression>, IGSharpObject
     {
         public GSharpType Type => GSharpType.SEQUENCE;
-        public GSharpType ElementType => GetElementType();
-        private GSharpType SequenceType = GSharpType.UNDEFINED;
-        public GSharpType GetElementType()
-        {
-            if (SequenceType != GSharpType.UNDEFINED)
-                return SequenceType;
-            if (Elements.Count > 0)
-            {
-                if (Elements[0] is Measure) return GSharpType.MEASURE;
-                else if (Elements[0] is Point) return GSharpType.POINT;
-                else if (Elements[0] is Line) return GSharpType.LINE;
-                else if (Elements[0] is Ray) return GSharpType.RAY;
-                else if (Elements[0] is Segment) return GSharpType.SEGMENT;
-                else if (Elements[0] is Circle) return GSharpType.CIRCLE;
-                else if (Elements[0] is Arc) return GSharpType.ARC;
-                else if (Elements[0] is GSharpString) return GSharpType.STRING;
-                else if (Elements[0] is GSharpNumber) return GSharpType.NUMBER;
-                else return GSharpType.UNDEFINED;
-            }
-            else return GSharpType.EMPTY;
-        }
+
+        public GSharpType ElementType => elementType;
+        private GSharpType elementType = GSharpType.UNDEFINED;
+
         public List<Expression> Elements { get; private set; }
         public FiniteSequence(List<Expression> elements)
         {
@@ -104,13 +86,13 @@ namespace GSharpInterpreter
         public FiniteSequence(List<Expression> elements, GSharpType sequenceType)
         {
             Elements = elements;
-            SequenceType = sequenceType;
+            elementType = sequenceType;
         }
         public FiniteSequence(List<Expression> elements, Sequence concatenated, GSharpType sequenceType)
         {
             Elements = elements;
             Concatenated = concatenated;
-            SequenceType = sequenceType;
+            elementType = sequenceType;
         }
         public override double TotalCount
         {
