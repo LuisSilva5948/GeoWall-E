@@ -1,9 +1,7 @@
 # GeoWall-E
 
-> Programming Project II.\
+> Programming Project III.\
 > MatCom - School of Math and Computer Science.\
 > Havana University.
 
-<p align="center">
-<img src="GeoWall-E.jpg" width="500" height=500">
-</p>
+![Wall-E](GeoWall-E.jpg)
